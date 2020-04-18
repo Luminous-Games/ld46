@@ -16,6 +16,7 @@ module.exports = {
         }),
         new HtmlWebpackPlugin({
             title: "LD46 game by Luminous",
+            template: 'www/index.html'
         }),
     ],
     resolve: {
