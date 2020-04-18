@@ -18,6 +18,7 @@ function resize(canvas) {
 const canvas = document.createElement("canvas");
 resize(canvas);
 canvas.id = "canvas";
+canvas.style.background = "red";
 document.body.appendChild(canvas);
 
 window.addEventListener("resize", function (event) {

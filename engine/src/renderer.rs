@@ -235,8 +235,10 @@ impl Renderer {
             .bind_texture(WebGlRenderingContext::TEXTURE_2D, Some(&self.texture));
         self.gl.uniform1i(Some(&sampler_uniform_location), 0);
 
-        self.gl.clear_color(1.0, 1.0, 1.0, 1.0);
-        self.gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+        self.gl.clear_color(0.4, 0.57, 0.4, 1.0);
+        self.gl.clear(
+            WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT,
+        );
 
         self.gl.draw_elements_with_i32(
             WebGlRenderingContext::TRIANGLES,
@@ -244,6 +246,11 @@ impl Renderer {
             WebGlRenderingContext::UNSIGNED_SHORT,
             0,
         );
+
+        self.gl.clear_color(0.0, 0.0, 0.0, 1.0);
+        self.gl.color_mask(false, false, false, true);
+        self.gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+        self.gl.color_mask(true, true, true, true);
 
         self.num_quads = 0;
         self.vertices.clear();

@@ -51,6 +51,12 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
 
     let texture = gl.create_texture().unwrap();
 
+    gl.enable(WebGlRenderingContext::BLEND);
+    gl.blend_func(
+        WebGlRenderingContext::ONE,
+        WebGlRenderingContext::ONE_MINUS_SRC_ALPHA,
+    );
+
     gl.active_texture(WebGlRenderingContext::TEXTURE0);
     gl.bind_texture(WebGlRenderingContext::TEXTURE_2D, Some(&texture));
 
