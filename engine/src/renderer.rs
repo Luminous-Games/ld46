@@ -1,9 +1,10 @@
 extern crate nalgebra as na;
-const FLOAT32_BYTES: i32 = 4;
 
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlTexture};
 
-const MAX_QUADS: usize = 2;
+const FLOAT32_BYTES: i32 = 4;
+
+const MAX_QUADS: usize = 3;
 const MAX_VERTICES: usize = MAX_QUADS * 4;
 const MAX_INDICES: usize = MAX_QUADS * 6;
 const VERTEX_SIZE: usize = 7;
