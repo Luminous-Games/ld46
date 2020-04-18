@@ -20,7 +20,11 @@ pub trait Renderable {
 }
 
 pub trait World {
-    fn tick<'a>(&'a self, key_manager: &key::KeyManager) -> Vec<Rc<RefCell<dyn Renderable>>>;
+    fn tick<'a>(
+        &'a mut self,
+        key_manager: &key::KeyManager,
+        timestamp: f64,
+    ) -> Vec<Rc<RefCell<dyn Renderable>>>;
 }
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -28,7 +32,7 @@ macro_rules! log {
     }
 }
 
-pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
+pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
     let mut key_manager = key::KeyManager::new();
 
     let document = web_sys::window().unwrap().document().unwrap();
@@ -83,16 +87,16 @@ pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
 
-    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+    *g.borrow_mut() = Some(Closure::wrap(Box::new(move |timestamp: f64| {
         let viewport = na::Vector2::new(canvas.width() as f32, canvas.height() as f32);
-        log!("{:?}", viewport);
+        log!("{:?}: {}", viewport, timestamp);
         renderer
             .gl
             .viewport(0, 0, viewport.x as i32, viewport.y as i32);
 
         renderer.set_viewport(viewport);
 
-        let renderables = world.tick(&key_manager);
+        let renderables = world.tick(&key_manager, timestamp);
         key_manager.post_tick_update_key_states();
         for renderable in renderables {
             renderable.borrow().render(&mut renderer);
@@ -103,7 +107,7 @@ pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
         request_animation_frame(f.borrow().as_ref().unwrap());
         // let _ = f.borrow_mut().take();
         // return;
-    }) as Box<dyn FnMut()>));
+    }) as Box<dyn FnMut(f64)>));
 
     request_animation_frame(g.borrow().as_ref().unwrap());
     Ok(())
@@ -113,7 +117,7 @@ fn window() -> web_sys::Window {
     web_sys::window().expect("no global `window` exists")
 }
 
-fn request_animation_frame(f: &Closure<dyn FnMut()>) {
+fn request_animation_frame(f: &Closure<dyn FnMut(f64)>) {
     window()
         .request_animation_frame(f.as_ref().unchecked_ref())
         .expect("should register `requestAnimationFrame` OK");

@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
 
-use engine::key::key_codes;
+use engine::key::{key_codes, KeyManager};
 use engine::renderer::Renderer;
 use engine::{Renderable, World};
 
@@ -26,6 +26,7 @@ macro_rules! log {
 struct SomeWorld {
     renderables: Vec<Rc<RefCell<dyn engine::Renderable>>>,
     player: Rc<RefCell<Player>>,
+    last_tick: f64,
 }
 
 struct SomeBox {}
@@ -44,15 +45,15 @@ impl Renderable for SomeBox {
 
 #[derive(Clone)]
 struct Player {
-    x: f32,
-    y: f32,
+    pos: na::Vector2<f32>,
+    speed: na::Vector2<f32>,
 }
 
 impl Renderable for Player {
     fn render(&self, r: &mut Renderer) {
         let tm = engine::renderer::TextureMap::new(4, 4);
         r.draw_quad(
-            na::Vector2::new(self.x, self.y),
+            na::Vector2::new(self.pos.x, self.pos.y),
             na::Vector2::new(50.0, 100.0),
             tm.get_texture(3, 2),
         );
@@ -65,28 +66,46 @@ impl SomeWorld {
         SomeWorld {
             renderables: vec![player_in_a_box.clone()],
             player: player_in_a_box.clone(),
+            last_tick: 0.0,
         }
+    }
+
+    fn get_direction(key_manager: &KeyManager) -> na::Vector2<f32> {
+        let mut direction = na::Vector2::zeros();
+        if key_manager.key_pressed(key_codes::W) || key_manager.key_pressed(key_codes::UP_ARROW) {
+            direction.y += 1.0;
+        }
+        if key_manager.key_pressed(key_codes::S) || key_manager.key_pressed(key_codes::DOWN_ARROW) {
+            direction.y += -1.0;
+        }
+        if key_manager.key_pressed(key_codes::D) || key_manager.key_pressed(key_codes::RIGHT_ARROW)
+        {
+            direction.x += 1.0;
+        }
+        if key_manager.key_pressed(key_codes::A) || key_manager.key_pressed(key_codes::LEFT_ARROW) {
+            direction.x += -1.0;
+        }
+        direction
     }
 }
 
 impl engine::World for SomeWorld {
     fn tick<'a>(
-        &'a self,
-        key_manager: &engine::key::KeyManager,
+        &'a mut self,
+        key_manager: &KeyManager,
+        timestamp: f64,
     ) -> Vec<Rc<RefCell<dyn Renderable>>> {
         let mut player = self.player.borrow_mut();
-        if (key_manager.key_pressed(key_codes::W)) {
-            player.y += 1.0;
+        let direction = SomeWorld::get_direction(key_manager);
+        player.speed += direction.scale((timestamp - self.last_tick) as f32 * 0.3);
+        let norm = player.speed.norm();
+        if norm > 10.0 {
+            player.speed.scale_mut(10.0 / norm);
         }
-        if (key_manager.key_pressed(key_codes::S)) {
-            player.y -= 1.0;
-        }
-        if (key_manager.key_pressed(key_codes::D)) {
-            player.x += 1.0;
-        }
-        if (key_manager.key_pressed(key_codes::A)) {
-            player.x -= 1.0;
-        }
+        player.speed.scale_mut(0.9);
+        let speed = player.speed.clone();
+        player.pos += speed;
+        self.last_tick = timestamp;
         self.renderables.clone()
     }
 }
@@ -95,6 +114,9 @@ impl engine::World for SomeWorld {
 pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
-    let player = Player { x: 100.0, y: 100.0 };
+    let player = Player {
+        pos: na::Vector2::new(100.0, 100.0),
+        speed: na::Vector2::zeros(),
+    };
     engine::start(Box::new(SomeWorld::new(player)) as Box<dyn World>);
 }

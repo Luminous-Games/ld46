@@ -24,6 +24,7 @@ module.exports = {
     modules: ["node_modules", "pkg"],
   },
   devServer: {
+    overlay: true,
     watchOptions: {
       poll: true,
     },
