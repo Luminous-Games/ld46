@@ -53,7 +53,7 @@ impl Renderable for Player {
         let tm = engine::renderer::TextureMap::new(4, 4);
         r.draw_quad(
             na::Vector2::new(self.x, self.y),
-            na::Vector2::new(0.3, 0.1),
+            na::Vector2::new(50.0, 100.0),
             tm.get_texture(3, 2),
         );
     }
@@ -76,16 +76,16 @@ impl engine::World for SomeWorld {
     ) -> Vec<Rc<RefCell<dyn Renderable>>> {
         let mut player = self.player.borrow_mut();
         if (key_manager.key_pressed(key_codes::W)) {
-            player.y += 0.01;
+            player.y += 1.0;
         }
         if (key_manager.key_pressed(key_codes::S)) {
-            player.y -= 0.01;
+            player.y -= 1.0;
         }
         if (key_manager.key_pressed(key_codes::D)) {
-            player.x += 0.01;
+            player.x += 1.0;
         }
         if (key_manager.key_pressed(key_codes::A)) {
-            player.x -= 0.01;
+            player.x -= 1.0;
         }
         self.renderables.clone()
     }
@@ -95,6 +95,6 @@ impl engine::World for SomeWorld {
 pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
-    let player = Player { x: 0.4, y: 0.4 };
+    let player = Player { x: 100.0, y: 100.0 };
     engine::start(Box::new(SomeWorld::new(player)) as Box<dyn World>);
 }
