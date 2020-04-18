@@ -63,6 +63,18 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
         &texture_image,
     )
     .unwrap();
+
+    gl.tex_parameteri(
+        WebGlRenderingContext::TEXTURE_2D,
+        WebGlRenderingContext::TEXTURE_MIN_FILTER,
+        WebGlRenderingContext::NEAREST as i32,
+    );
+    gl.tex_parameteri(
+        WebGlRenderingContext::TEXTURE_2D,
+        WebGlRenderingContext::TEXTURE_MAG_FILTER,
+        WebGlRenderingContext::NEAREST as i32,
+    );
+
     gl.generate_mipmap(WebGlRenderingContext::TEXTURE_2D);
 
     let vert_shader = compile_shader(

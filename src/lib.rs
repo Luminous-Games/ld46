@@ -29,20 +29,6 @@ struct SomeWorld {
     last_tick: f64,
 }
 
-struct SomeBox {}
-
-impl Renderable for SomeBox {
-    fn render(&self, r: &mut engine::renderer::Renderer) {
-        let tm = engine::renderer::TextureMap::new(4, 4);
-
-        r.draw_quad(
-            na::Vector2::new(300.0, 100.0),
-            na::Vector2::new(200.0, 200.0),
-            tm.get_texture(3, 2),
-        );
-    }
-}
-
 #[derive(Clone)]
 struct Player {
     pos: na::Vector2<f32>,
@@ -51,11 +37,11 @@ struct Player {
 
 impl Renderable for Player {
     fn render(&self, r: &mut Renderer) {
-        let tm = engine::renderer::TextureMap::new(4, 4);
+        let tm = engine::renderer::TextureMap::new(1, 1);
         r.draw_quad(
             na::Vector2::new(self.pos.x, self.pos.y),
-            na::Vector2::new(50.0, 100.0),
-            tm.get_texture(3, 2),
+            na::Vector2::new(128.0, 128.0),
+            tm.get_texture(0, 0),
         );
     }
 }
@@ -104,7 +90,7 @@ impl engine::World for SomeWorld {
         }
         player.speed.scale_mut(0.9);
         let speed = player.speed.clone();
-        player.pos += speed;
+        player.pos += speed.scale((timestamp - self.last_tick) as f32 * 0.05);
         self.last_tick = timestamp;
         self.renderables.clone()
     }
