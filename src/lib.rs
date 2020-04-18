@@ -26,8 +26,8 @@ impl engine::Renderable for SomeBox {
         let tm = engine::renderer::TextureMap::new(4, 4);
 
         r.draw_quad(
-            na::Vector2::zeros(),
-            na::Vector2::new(0.2, 0.4),
+            na::Vector2::new(300.0, 100.0),
+            na::Vector2::new(200.0, 200.0),
             tm.get_texture(3, 2),
         );
     }

@@ -78,7 +78,14 @@ pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
     let g = f.clone();
 
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        log! {"Frame"};
+        let viewport = na::Vector2::new(canvas.width() as f32, canvas.height() as f32);
+        log!("{:?}", viewport);
+        renderer
+            .gl
+            .viewport(0, 0, viewport.x as i32, viewport.y as i32);
+
+        renderer.set_viewport(viewport);
+
         let renderables = world.tick();
         for renderable in renderables {
             renderable.render(&mut renderer);
@@ -86,9 +93,9 @@ pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
 
         renderer.flush();
 
-        // request_animation_frame(f.borrow().as_ref().unwrap());
-        let _ = f.borrow_mut().take();
-        return;
+        request_animation_frame(f.borrow().as_ref().unwrap());
+        // let _ = f.borrow_mut().take();
+        // return;
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(g.borrow().as_ref().unwrap());

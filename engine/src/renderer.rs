@@ -48,11 +48,13 @@ pub struct Renderer {
     indices: Vec<u16>,  //Box<[i32; MAX_INDICES]>,
     num_quads: usize,
 
-    gl: WebGlRenderingContext,
+    pub gl: WebGlRenderingContext,
     program: WebGlProgram,
     vertex_buffer: WebGlBuffer,
     index_buffer: WebGlBuffer,
     texture: WebGlTexture,
+
+    viewport: na::Vector2<f32>,
 }
 
 impl Renderer {
@@ -95,12 +97,16 @@ impl Renderer {
             vertex_buffer,
             index_buffer,
             texture,
+            viewport: na::Vector2::zeros(),
         }
     }
 
+    pub fn set_viewport(&mut self, viewport: na::Vector2<f32>) {
+        self.viewport = viewport;
+    }
+
     pub fn draw_quad(&mut self, pos: na::Vector2<f32>, size: na::Vector2<f32>, texture: Texture) {
-        log!("{:?}", texture);
-        self.vertices.push(pos.x - size.x);
+        self.vertices.push(pos.x - size.x / 2.0);
         self.vertices.push(pos.y);
         self.vertices.push(1.0);
         self.vertices.push(1.0);
@@ -108,7 +114,7 @@ impl Renderer {
         self.vertices.push(texture.start.x);
         self.vertices.push(texture.start.y + texture.size.y);
 
-        self.vertices.push(pos.x + size.x);
+        self.vertices.push(pos.x + size.x / 2.0);
         self.vertices.push(pos.y);
         self.vertices.push(1.0);
         self.vertices.push(1.0);
@@ -116,7 +122,7 @@ impl Renderer {
         self.vertices.push(texture.start.x + texture.size.x);
         self.vertices.push(texture.start.y + texture.size.y);
 
-        self.vertices.push(pos.x - size.x);
+        self.vertices.push(pos.x - size.x / 2.0);
         self.vertices.push(pos.y + size.y);
         self.vertices.push(1.0);
         self.vertices.push(1.0);
@@ -124,7 +130,7 @@ impl Renderer {
         self.vertices.push(texture.start.x);
         self.vertices.push(texture.start.y);
 
-        self.vertices.push(pos.x + size.x);
+        self.vertices.push(pos.x + size.x / 2.0);
         self.vertices.push(pos.y + size.y);
         self.vertices.push(1.0);
         self.vertices.push(1.0);
@@ -179,6 +185,11 @@ impl Renderer {
             .get_uniform_location(&self.program, "uSampler")
             .unwrap();
 
+        let viewport_uniform_location = self
+            .gl
+            .get_uniform_location(&self.program, "uViewport")
+            .unwrap();
+
         self.gl.vertex_attrib_pointer_with_i32(
             position_attrib_location,
             2,
@@ -202,6 +213,15 @@ impl Renderer {
             false,
             (VERTEX_SIZE as i32) * FLOAT32_BYTES,
             5 * FLOAT32_BYTES,
+        );
+
+        let orthographic_view =
+            na::Orthographic3::new(0.0, self.viewport.x, 0.0, self.viewport.y, 0.0, 1.0);
+
+        self.gl.uniform_matrix4fv_with_f32_array(
+            Some(&viewport_uniform_location),
+            false,
+            orthographic_view.as_matrix().as_slice(),
         );
 
         // Use texture 0
