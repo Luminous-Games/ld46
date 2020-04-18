@@ -1,22 +1,26 @@
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::{WebGlProgram, WebGlRenderingContext, WebGlShader};
+extern crate nalgebra as na;
 extern crate wee_alloc;
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
-extern crate nalgebra as na;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+use web_sys::{WebGlProgram, WebGlRenderingContext, WebGlShader};
 
-pub mod renderer;
 use renderer::Renderer;
+
+use crate::key::KeyManager;
+
+pub mod key;
+pub mod renderer;
 
 pub trait Renderable {
     fn render(&self, renderer: &mut Renderer);
 }
 
 pub trait World {
-    fn tick<'a>(&'a self) -> &'a Vec<Box<dyn Renderable>>;
+    fn tick<'a>(&'a self, key_manager: &key::KeyManager) -> Vec<Rc<RefCell<dyn Renderable>>>;
 }
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -25,6 +29,8 @@ macro_rules! log {
 }
 
 pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
+    let mut key_manager = key::KeyManager::new();
+
     let document = web_sys::window().unwrap().document().unwrap();
     let canvas = document.get_element_by_id("canvas").unwrap();
     let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
@@ -86,9 +92,10 @@ pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
 
         renderer.set_viewport(viewport);
 
-        let renderables = world.tick();
+        let renderables = world.tick(&key_manager);
+        key_manager.post_tick_update_key_states();
         for renderable in renderables {
-            renderable.render(&mut renderer);
+            renderable.borrow().render(&mut renderer);
         }
 
         renderer.flush();
