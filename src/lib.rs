@@ -19,5 +19,5 @@ use wasm_bindgen::prelude::*;
 pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
-    log!("Hello, world! - {}", engine::hello());
+    engine::start();
 }
