@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title><%= htmlWebpackPlugin.options.title %></title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+      * {
+        box-sizing: border-box;
+      }
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
 
-        canvas#canvas {
-            margin: auto;
-            display: block;
-        }
+      canvas#canvas {
+        margin: auto;
+        display: block;
+      }
     </style>
-</head>
-<body>
-<noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
-</body>
+  </head>
+  <body>
+    <noscript
+      >This page contains webassembly and javascript content, please enable
+      javascript in your browser.</noscript
+    >
+    <img id="texture" style="display: none;" />
+  </body>
 </html>

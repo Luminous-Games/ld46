@@ -1,11 +1,14 @@
 precision mediump float;
 
-attribute vec2 position;
-attribute vec3 color;
+attribute vec2 aPosition;
+attribute vec3 aColor;
+attribute vec2 aTexCoord;
 
-varying vec4 fragColor;
+varying vec4 vFragColor;
+varying vec2 vTexCoord;
 
 void main() {
-  gl_Position = vec4(position, 0.0, 1.0);
-  fragColor = vec4(color, 1.0);
+  gl_Position = vec4(aPosition, 0.0, 1.0);
+  vFragColor = vec4(aColor, 1.0);
+  vTexCoord = aTexCoord;
 }

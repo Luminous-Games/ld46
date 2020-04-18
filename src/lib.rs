@@ -23,7 +23,13 @@ struct SomeBox {}
 
 impl engine::Renderable for SomeBox {
     fn render(&self, r: &mut engine::renderer::Renderer) {
-        r.draw_quad(na::Vector2::zeros(), na::Vector2::new(0.2, 0.2));
+        let tm = engine::renderer::TextureMap::new(4, 4);
+
+        r.draw_quad(
+            na::Vector2::zeros(),
+            na::Vector2::new(0.2, 0.4),
+            tm.get_texture(3, 2),
+        );
     }
 }
 
@@ -40,5 +46,6 @@ pub fn run() {
 
     engine::start(Box::new(SomeWorld {
         renderables: vec![Box::new(SomeBox {})],
-    }));
+    }))
+    .unwrap();
 }

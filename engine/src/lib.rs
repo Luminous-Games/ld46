@@ -29,26 +29,49 @@ pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
     let canvas = document.get_element_by_id("canvas").unwrap();
     let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
 
+    let texture_image = document
+        .get_element_by_id("texture")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlImageElement>()?;
+
     let gl = canvas
         .get_context("webgl")?
         .unwrap()
         .dyn_into::<WebGlRenderingContext>()?;
 
+    let texture = gl.create_texture().unwrap();
+
+    gl.active_texture(WebGlRenderingContext::TEXTURE0);
+    gl.bind_texture(WebGlRenderingContext::TEXTURE_2D, Some(&texture));
+
+    gl.tex_image_2d_with_u32_and_u32_and_image(
+        WebGlRenderingContext::TEXTURE_2D,
+        0,
+        WebGlRenderingContext::RGBA as i32,
+        WebGlRenderingContext::RGBA,
+        WebGlRenderingContext::UNSIGNED_BYTE,
+        &texture_image,
+    )
+    .unwrap();
+    gl.generate_mipmap(WebGlRenderingContext::TEXTURE_2D);
+
     let vert_shader = compile_shader(
         &gl,
         WebGlRenderingContext::VERTEX_SHADER,
         include_str!("shaders/vertex.glsl"),
-    )?;
+    )
+    .unwrap();
     let frag_shader = compile_shader(
         &gl,
         WebGlRenderingContext::FRAGMENT_SHADER,
         include_str!("shaders/fragment.glsl"),
-    )?;
+    )
+    .unwrap();
 
     let program = link_program(&gl, &vert_shader, &frag_shader)?;
     gl.use_program(Some(&program));
 
-    let mut renderer = Renderer::new(gl, program);
+    let mut renderer = Renderer::new(gl, program, texture);
     log! {"Engine initialised"};
 
     let f = Rc::new(RefCell::new(None));
@@ -63,7 +86,9 @@ pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
 
         renderer.flush();
 
-        request_animation_frame(f.borrow().as_ref().unwrap());
+        // request_animation_frame(f.borrow().as_ref().unwrap());
+        let _ = f.borrow_mut().take();
+        return;
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(g.borrow().as_ref().unwrap());

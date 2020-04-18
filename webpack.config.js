@@ -13,9 +13,7 @@ module.exports = {
     new WasmPackPlugin({
       crateDirectory: path.resolve(__dirname, "."),
       outName: "luminous_ld46",
-      watchDirectories: [
-        path.resolve(__dirname, "engine/src")
-      ],
+      watchDirectories: [path.resolve(__dirname, "engine/src")],
     }),
     new HtmlWebpackPlugin({
       title: "LD46 game by Luminous",
@@ -29,5 +27,21 @@ module.exports = {
     watchOptions: {
       poll: true,
     },
+  },
+  module: {
+    rules: [
+      {
+        test: /\.png$/,
+        use: [
+          {
+            loader: "url-loader",
+            options: {
+              limit: 8000,
+              name: "images/[hash]-[name].[ext]",
+            },
+          },
+        ],
+      },
+    ],
   },
 };
