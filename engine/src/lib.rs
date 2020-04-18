@@ -1,12 +1,30 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{WebGlProgram, WebGlRenderingContext, WebGlShader};
+extern crate wee_alloc;
+
+use std::cell::RefCell;
+use std::rc::Rc;
 
 extern crate nalgebra as na;
 
-const FLOAT32_BYTES: i32 = 4;
+pub mod renderer;
+use renderer::Renderer;
 
-pub fn start() -> Result<(), JsValue> {
+pub trait Renderable {
+    fn render(&self, renderer: &mut Renderer);
+}
+
+pub trait World {
+    fn tick<'a>(&'a self) -> &'a Vec<Box<dyn Renderable>>;
+}
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
+pub fn start(world: Box<dyn World>) -> Result<(), JsValue> {
     let document = web_sys::window().unwrap().document().unwrap();
     let canvas = document.get_element_by_id("canvas").unwrap();
     let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
@@ -30,64 +48,36 @@ pub fn start() -> Result<(), JsValue> {
     let program = link_program(&gl, &vert_shader, &frag_shader)?;
     gl.use_program(Some(&program));
 
-    let vertices: [f32; 3 * 5] = [
-        -0.7, -0.7, 1.0, 1.0, 0.0, //
-        0.7, -0.7, 0.7, 0.0, 1.0, //
-        0.0, 0.7, 0.1, 1.0, 0.6, //
-    ];
+    let mut renderer = Renderer::new(gl, program);
+    log! {"Engine initialised"};
 
-    let buffer = gl.create_buffer().ok_or("failed to create buffer")?;
-    gl.bind_buffer(WebGlRenderingContext::ARRAY_BUFFER, Some(&buffer));
+    let f = Rc::new(RefCell::new(None));
+    let g = f.clone();
 
-    // Note that `Float32Array::view` is somewhat dangerous (hence the
-    // `unsafe`!). This is creating a raw view into our module's
-    // `WebAssembly.Memory` buffer, but if we allocate more pages for ourself
-    // (aka do a memory allocation in Rust) it'll cause the buffer to change,
-    // causing the `Float32Array` to be invalid.
-    //
-    // As a result, after `Float32Array::view` we have to be very careful not to
-    // do any memory allocations before it's dropped.
-    unsafe {
-        let vert_array = js_sys::Float32Array::view(&vertices);
+    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+        log! {"Frame"};
+        let renderables = world.tick();
+        for renderable in renderables {
+            renderable.render(&mut renderer);
+        }
 
-        gl.buffer_data_with_array_buffer_view(
-            WebGlRenderingContext::ARRAY_BUFFER,
-            &vert_array,
-            WebGlRenderingContext::STATIC_DRAW,
-        );
-    }
+        renderer.flush();
 
-    let position_attrib_location = gl.get_attrib_location(&program, "position") as u32;
-    let color_attrib_location = gl.get_attrib_location(&program, "color") as u32;
-    gl.vertex_attrib_pointer_with_i32(
-        position_attrib_location,
-        2,
-        WebGlRenderingContext::FLOAT,
-        false,
-        5 * FLOAT32_BYTES,
-        0,
-    );
-    gl.vertex_attrib_pointer_with_i32(
-        color_attrib_location,
-        3,
-        WebGlRenderingContext::FLOAT,
-        false,
-        5 * FLOAT32_BYTES,
-        2 * FLOAT32_BYTES,
-    );
-    gl.enable_vertex_attrib_array(position_attrib_location);
-    gl.enable_vertex_attrib_array(color_attrib_location);
+        request_animation_frame(f.borrow().as_ref().unwrap());
+    }) as Box<dyn FnMut()>));
 
-    gl.clear_color(0.0, 0.0, 0.0, 1.0);
-    gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
-
-    gl.draw_arrays(
-        WebGlRenderingContext::TRIANGLES,
-        0,
-        (vertices.len() / 5) as i32,
-    );
-
+    request_animation_frame(g.borrow().as_ref().unwrap());
     Ok(())
+}
+
+fn window() -> web_sys::Window {
+    web_sys::window().expect("no global `window` exists")
+}
+
+fn request_animation_frame(f: &Closure<dyn FnMut()>) {
+    window()
+        .request_animation_frame(f.as_ref().unchecked_ref())
+        .expect("should register `requestAnimationFrame` OK");
 }
 
 pub fn compile_shader(

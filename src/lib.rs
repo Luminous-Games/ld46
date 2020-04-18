@@ -6,6 +6,7 @@ extern crate wee_alloc;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+extern crate nalgebra as na;
 // A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
     ( $( $t:tt )* ) => {
@@ -15,9 +16,29 @@ macro_rules! log {
 
 use wasm_bindgen::prelude::*;
 
+struct SomeWorld {
+    renderables: Vec<Box<dyn engine::Renderable>>,
+}
+struct SomeBox {}
+
+impl engine::Renderable for SomeBox {
+    fn render(&self, r: &mut engine::renderer::Renderer) {
+        r.draw_quad(na::Vector2::zeros(), na::Vector2::new(0.2, 0.2));
+    }
+}
+
+impl engine::World for SomeWorld {
+    fn tick(&self) -> &Vec<Box<dyn engine::Renderable>> {
+        return &self.renderables;
+    }
+}
+
 #[wasm_bindgen]
 pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
-    engine::start();
+
+    engine::start(Box::new(SomeWorld {
+        renderables: vec![Box::new(SomeBox {})],
+    }));
 }
