@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate downcast_rs;
 extern crate nalgebra as na;
 #[macro_use]
 extern crate num_derive;
@@ -6,6 +8,7 @@ extern crate wee_alloc;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use downcast_rs::Downcast;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext;
@@ -28,7 +31,7 @@ pub struct GameObject {
     pub pos: na::Point2<f32>,
     pub speed: na::Vector2<f32>,
     collider: Option<Collider>,
-    rend: Vec<Box<dyn Rend>>,
+    pub rend: Vec<Box<dyn Rend>>,
 }
 impl GameObject {
     pub fn new(pos: na::Point2<f32>) -> GameObject {
@@ -53,9 +56,10 @@ impl GameObject {
     }
 }
 
-pub trait Rend {
+pub trait Rend: Downcast {
     fn render(&self, renderer: &mut Renderer, game_object: &GameObject);
 }
+impl_downcast!(Rend);
 
 pub struct Collider {
     range: f32,
@@ -159,7 +163,7 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
 
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move |timestamp: f64| {
         let viewport = na::Vector2::new(canvas.width() as f32, canvas.height() as f32);
-        log::debug!("{:?}: {}", viewport, timestamp);
+        // log::debug!("{:?}: {}", viewport, timestamp);
         renderer
             .gl
             .viewport(0, 0, viewport.x as i32, viewport.y as i32);

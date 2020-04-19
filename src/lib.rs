@@ -2,11 +2,14 @@
 extern crate console_error_panic_hook;
 extern crate nalgebra as na;
 extern crate wee_alloc;
-use engine::key::{key_codes, KeyManager};
-use engine::renderer::Renderer;
-use engine::{Collider, GameObject, Rend, World};
+
 use std::collections::HashMap;
+
 use wasm_bindgen::prelude::*;
+
+use engine::key::{key_codes, KeyManager};
+use engine::renderer::{Renderer, TextureMap};
+use engine::{Collider, GameObject, Rend, World};
 
 // Use `wee_alloc` as the global allocator.
 #[global_allocator]
@@ -20,6 +23,62 @@ struct TexturedBox {
 impl Rend for TexturedBox {
     fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
         renderer.draw_quad(game_object.pos, self.size, &self.texture)
+    }
+}
+
+struct Thermometer {
+    size: na::Vector2<f32>,
+    body_pos: (f32, f32),
+    filling_pos: (f32, f32),
+    texture_size: (f32, f32),
+    texture_map: TextureMap,
+    temperature: f32,
+}
+
+impl Thermometer {
+    pub fn new(
+        body_pos: (f32, f32),
+        filling_pos: (f32, f32),
+        texture_size: (f32, f32),
+        texture_map: TextureMap,
+    ) -> Thermometer {
+        Thermometer {
+            size: na::Vector2::new(128.0, 32.0),
+            body_pos,
+            filling_pos,
+            texture_size,
+            texture_map,
+            temperature: 0.5,
+        }
+    }
+}
+
+impl Rend for Thermometer {
+    fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
+        renderer.draw_quad(
+            game_object.pos,
+            self.size,
+            &self.texture_map.get_texture_custom(
+                self.body_pos.0,
+                self.body_pos.1,
+                self.texture_size.0,
+                self.texture_size.1,
+            ),
+        );
+        let mut filling_size = self.size.clone_owned();
+        filling_size.x *= self.temperature;
+        let mut filling_pos = game_object.pos.clone();
+        filling_pos.x -= self.size.x * 0.5 * (1.0 - self.temperature);
+        renderer.draw_quad(
+            filling_pos,
+            filling_size,
+            &self.texture_map.get_texture_custom(
+                self.filling_pos.0,
+                self.filling_pos.1,
+                self.texture_size.0 * self.temperature,
+                self.texture_size.1,
+            ),
+        );
     }
 }
 
@@ -38,7 +97,7 @@ struct SomeWorld<'a> {
 
 impl<'a> SomeWorld<'a> {
     fn new() -> SomeWorld<'a> {
-        let texture_map = engine::renderer::TextureMap::new(2, 1);
+        let texture_map = engine::renderer::TextureMap::new(4, 1);
 
         let mut player = GameObject::new(na::Point2::new(100.0, 100.0));
         player.add_rend(Box::new(TexturedBox {
@@ -58,10 +117,20 @@ impl<'a> SomeWorld<'a> {
             size: na::Vector2::new(128.0, 128.0),
             texture: texture_map.get_texture(1, 0),
         }));
+
+        let mut thermometer = GameObject::new(na::Point2::new(100.0, 50.0));
+        thermometer.add_rend(Box::new(Thermometer::new(
+            (2.0, 0.0),
+            (2.0, 0.5),
+            (2.0, 0.5),
+            texture_map.clone(),
+        )));
+
         let mut game_objects = HashMap::new();
         game_objects.insert("player", player);
         game_objects.insert("fire", fire);
         game_objects.insert("tree", tree);
+        game_objects.insert("thermometer", thermometer);
         SomeWorld {
             game_objects,
             last_tick: 0.0,
@@ -92,6 +161,8 @@ impl<'a> engine::World for SomeWorld<'a> {
         let direction = SomeWorld::get_direction(key_manager);
 
         let player = self.game_objects.get("player").unwrap();
+        let fire = self.game_objects.get("fire").unwrap();
+
         let mut speed = player.speed.clone();
         speed += direction.scale((timestamp - self.last_tick) as f32 * 0.1);
         let norm = speed.norm();
@@ -107,6 +178,14 @@ impl<'a> engine::World for SomeWorld<'a> {
                 None => (),
             }
         }
+
+        self.game_objects.get_mut("thermometer").unwrap().rend[0]
+            .downcast_mut::<Thermometer>()
+            .unwrap()
+            .temperature = f32::min(
+            1.0,
+            f32::max(0.0, 1.0 - ((player.pos - fire.pos).norm() - 48.0) / 200.0),
+        );
 
         let mut player = self.game_objects.get_mut("player").unwrap();
         player.pos += speed.scale((timestamp - self.last_tick) as f32 * 0.05);

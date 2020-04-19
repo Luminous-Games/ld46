@@ -1,16 +1,19 @@
-use std::collections::HashMap;
 extern crate nalgebra as na;
+
+use std::collections::HashMap;
 
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlTexture};
 
 const FLOAT32_BYTES: i32 = 4;
 
-const MAX_QUADS: usize = 3;
+const MAX_QUADS: usize = 10000;
 const MAX_VERTICES: usize = MAX_QUADS * 4;
 const MAX_INDICES: usize = MAX_QUADS * 6;
 const VERTEX_SIZE: usize = 8;
+
 mod glutil;
 
+#[derive(Clone)]
 pub struct TextureMap {
     tiles_x: i32,
     tiles_y: i32,
@@ -31,6 +34,16 @@ impl TextureMap {
             start: na::Vector2::new(width * column as f32, height * row as f32),
             size: na::Vector2::new(width, height),
         };
+    }
+
+    pub fn get_texture_custom(&self, column: f32, row: f32, w: f32, h: f32) -> Texture {
+        let width = 1f32 / self.tiles_x as f32;
+        let height = 1f32 / self.tiles_y as f32;
+
+        Texture {
+            start: na::Vector2::new(width * column as f32, height * row as f32),
+            size: na::Vector2::new(width * w, height * h),
+        }
     }
 }
 
