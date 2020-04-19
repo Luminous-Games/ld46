@@ -133,11 +133,11 @@ struct Player {
 
 impl Renderable for Player {
     fn render(&self, r: &mut Renderer) {
-        let tm = engine::renderer::TextureMap::new(1, 1);
+        let tm = engine::renderer::TextureMap::new(2, 1);
         r.draw_quad(
             na::Vector2::new(self.pos.x, self.pos.y),
             na::Vector2::new(128.0, 128.0),
-            tm.get_texture(0, 0),
+            tm.get_texture(1, 0),
         );
     }
 }
@@ -149,10 +149,10 @@ struct Fire {
 
 impl Renderable for Fire {
     fn render(&self, r: &mut Renderer) {
-        let tm = engine::renderer::TextureMap::new(1, 1);
+        let tm = engine::renderer::TextureMap::new(2, 1);
         r.draw_quad(
             na::Vector2::new(self.pos.x, self.pos.y + 32.0),
-            na::Vector2::new(64.0, -64.0),
+            na::Vector2::new(64.0, 64.0),
             tm.get_texture(0, 0),
         );
     }
@@ -176,11 +176,11 @@ struct Tree {
 
 impl Renderable for Tree {
     fn render(&self, r: &mut Renderer) {
-        let tm = engine::renderer::TextureMap::new(1, 1);
+        let tm = engine::renderer::TextureMap::new(2, 1);
         r.draw_quad(
             na::Vector2::new(self.pos.x, self.pos.y),
             na::Vector2::new(128.0, 128.0),
-            tm.get_texture(0, 0),
+            tm.get_texture(1, 0),
         );
     }
 }
