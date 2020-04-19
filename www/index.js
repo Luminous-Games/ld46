@@ -1,18 +1,20 @@
 import spritesheet from "./images/spritesheet.png";
 import * as game from "luminous_ld46";
 
-const aspect = 16 / 8;
+// const aspect = 16 / 8;
 
 function resize(canvas) {
   const w = document.body.clientWidth;
   const h = document.body.clientHeight;
-  if (w / aspect < h) {
-    canvas.width = w;
-    canvas.height = w / aspect;
-  } else {
-    canvas.width = h * aspect;
-    canvas.height = h;
-  }
+  // if (w / aspect < h) {
+  //   canvas.width = w;
+  //   canvas.height = w / aspect;
+  // } else {
+  //   canvas.width = h * aspect;
+  //   canvas.height = h;
+  // }
+  canvas.width = w;
+  canvas.height = h;
 }
 
 const canvas = document.createElement("canvas");

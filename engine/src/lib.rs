@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{WebGlProgram, WebGlRenderingContext, WebGlShader};
+use web_sys::WebGlRenderingContext;
 
 use renderer::Renderer;
 
@@ -51,12 +51,6 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
 
     let texture = gl.create_texture().unwrap();
 
-    gl.enable(WebGlRenderingContext::BLEND);
-    gl.blend_func(
-        WebGlRenderingContext::ONE,
-        WebGlRenderingContext::ONE_MINUS_SRC_ALPHA,
-    );
-
     gl.active_texture(WebGlRenderingContext::TEXTURE0);
     gl.bind_texture(WebGlRenderingContext::TEXTURE_2D, Some(&texture));
 
@@ -83,23 +77,11 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
 
     gl.generate_mipmap(WebGlRenderingContext::TEXTURE_2D);
 
-    let vert_shader = compile_shader(
-        &gl,
-        WebGlRenderingContext::VERTEX_SHADER,
+    let mut renderer = Renderer::new(gl, texture);
+    renderer.load_shader(
         include_str!("shaders/vertex.glsl"),
-    )
-    .unwrap();
-    let frag_shader = compile_shader(
-        &gl,
-        WebGlRenderingContext::FRAGMENT_SHADER,
         include_str!("shaders/fragment.glsl"),
-    )
-    .unwrap();
-
-    let program = link_program(&gl, &vert_shader, &frag_shader)?;
-    gl.use_program(Some(&program));
-
-    let mut renderer = Renderer::new(gl, program, texture);
+    );
     log! {"Engine initialised"};
 
     let f = Rc::new(RefCell::new(None));
@@ -139,67 +121,6 @@ fn request_animation_frame(f: &Closure<dyn FnMut(f64)>) {
     window()
         .request_animation_frame(f.as_ref().unchecked_ref())
         .expect("should register `requestAnimationFrame` OK");
-}
-
-pub fn compile_shader(
-    gl: &WebGlRenderingContext,
-    shader_type: u32,
-    source: &str,
-) -> Result<WebGlShader, String> {
-    let shader = gl
-        .create_shader(shader_type)
-        .ok_or_else(|| String::from("Unable to create shader object"))?;
-    gl.shader_source(&shader, source);
-    gl.compile_shader(&shader);
-
-    if gl
-        .get_shader_parameter(&shader, WebGlRenderingContext::COMPILE_STATUS)
-        .as_bool()
-        .unwrap_or(false)
-    {
-        Ok(shader)
-    } else {
-        Err(gl
-            .get_shader_info_log(&shader)
-            .unwrap_or_else(|| String::from("Unknown error creating shader")))
-    }
-}
-
-pub fn link_program(
-    gl: &WebGlRenderingContext,
-    vert_shader: &WebGlShader,
-    frag_shader: &WebGlShader,
-) -> Result<WebGlProgram, String> {
-    let program = gl
-        .create_program()
-        .ok_or_else(|| String::from("Unable to create shader object"))?;
-
-    gl.attach_shader(&program, vert_shader);
-    gl.attach_shader(&program, frag_shader);
-    gl.link_program(&program);
-
-    if gl
-        .get_program_parameter(&program, WebGlRenderingContext::LINK_STATUS)
-        .as_bool()
-        .unwrap_or(false)
-    {
-        gl.validate_program(&program);
-        if gl
-            .get_program_parameter(&program, WebGlRenderingContext::LINK_STATUS)
-            .as_bool()
-            .unwrap_or(false)
-        {
-            Ok(program)
-        } else {
-            Err(gl
-                .get_program_info_log(&program)
-                .unwrap_or_else(|| String::from("Unknown error validating program object")))
-        }
-    } else {
-        Err(gl
-            .get_program_info_log(&program)
-            .unwrap_or_else(|| String::from("Unknown error creating program object")))
-    }
 }
 
 #[cfg(test)]

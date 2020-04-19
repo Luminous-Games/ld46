@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 extern crate nalgebra as na;
 
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlTexture};
@@ -9,11 +10,7 @@ const MAX_VERTICES: usize = MAX_QUADS * 4;
 const MAX_INDICES: usize = MAX_QUADS * 6;
 const VERTEX_SIZE: usize = 7;
 
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
+mod glutil;
 
 pub struct TextureMap {
     tiles_x: i32,
@@ -50,20 +47,25 @@ pub struct Renderer {
     num_quads: usize,
 
     pub gl: WebGlRenderingContext,
-    program: WebGlProgram,
     vertex_buffer: WebGlBuffer,
     index_buffer: WebGlBuffer,
     texture: WebGlTexture,
 
+    programs: HashMap<i32, WebGlProgram>,
+    selected_program: i32,
     viewport: na::Vector2<f32>,
 }
 
 impl Renderer {
-    pub fn new(
-        gl: WebGlRenderingContext,
-        program: WebGlProgram,
-        texture: WebGlTexture,
-    ) -> Renderer {
+    pub fn new(gl: WebGlRenderingContext, texture: WebGlTexture) -> Renderer {
+        // Configure GL
+        gl.enable(WebGlRenderingContext::BLEND);
+        gl.blend_func(
+            WebGlRenderingContext::ONE,
+            WebGlRenderingContext::ONE_MINUS_SRC_ALPHA,
+        );
+
+        // Initialise indices
         let mut indices = Vec::with_capacity(MAX_INDICES);
         let mut offset = 0;
         for _ in 0..MAX_QUADS {
@@ -78,6 +80,7 @@ impl Renderer {
             offset += 4;
         }
 
+        // Initialise buffers
         let vertex_buffer = gl
             .create_buffer()
             .ok_or("failed to create vertex buffer")
@@ -94,12 +97,28 @@ impl Renderer {
             num_quads: 0,
 
             gl,
-            program,
             vertex_buffer,
             index_buffer,
             texture,
+
+            selected_program: 0,
+            programs: HashMap::new(),
             viewport: na::Vector2::zeros(),
         }
+    }
+
+    pub fn load_shader(&mut self, vertex: &str, fragment: &str) -> i32 {
+        let vert_shader =
+            glutil::compile_shader(&self.gl, WebGlRenderingContext::VERTEX_SHADER, vertex).unwrap();
+        let frag_shader =
+            glutil::compile_shader(&self.gl, WebGlRenderingContext::FRAGMENT_SHADER, fragment)
+                .unwrap();
+
+        let program = glutil::link_program(&self.gl, &vert_shader, &frag_shader).unwrap();
+        let key = self.programs.len() as i32;
+        self.programs.insert(key, program);
+
+        return key;
     }
 
     pub fn set_viewport(&mut self, viewport: na::Vector2<f32>) {
@@ -143,6 +162,8 @@ impl Renderer {
     }
 
     pub fn flush(&mut self) {
+        let program = self.programs.get(&self.selected_program).unwrap();
+        self.gl.use_program(Some(program));
         self.gl.bind_buffer(
             WebGlRenderingContext::ARRAY_BUFFER,
             Some(&self.vertex_buffer),
@@ -175,21 +196,14 @@ impl Renderer {
             );
         }
 
-        let position_attrib_location =
-            self.gl.get_attrib_location(&self.program, "aPosition") as u32;
-        let color_attrib_location = self.gl.get_attrib_location(&self.program, "aColor") as u32;
-        let texcoord_attrib_location =
-            self.gl.get_attrib_location(&self.program, "aTexCoord") as u32;
+        let position_attrib_location = self.gl.get_attrib_location(&program, "aPosition") as u32;
+        let color_attrib_location = self.gl.get_attrib_location(&program, "aColor") as u32;
+        let texcoord_attrib_location = self.gl.get_attrib_location(&program, "aTexCoord") as u32;
 
-        let sampler_uniform_location = self
-            .gl
-            .get_uniform_location(&self.program, "uSampler")
-            .unwrap();
+        let sampler_uniform_location = self.gl.get_uniform_location(&program, "uSampler").unwrap();
 
-        let viewport_uniform_location = self
-            .gl
-            .get_uniform_location(&self.program, "uViewport")
-            .unwrap();
+        let viewport_uniform_location =
+            self.gl.get_uniform_location(&program, "uViewport").unwrap();
 
         self.gl.vertex_attrib_pointer_with_i32(
             position_attrib_location,
