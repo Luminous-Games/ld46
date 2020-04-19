@@ -320,7 +320,7 @@ impl Renderer {
 
         self.gl.draw_elements_with_i32(
             WebGlRenderingContext::TRIANGLES,
-            (vertices.len() as i32) / 4 * 6,
+            (vertices.len() as i32) / (4 * VERTEX_SIZE as i32) * 6,
             WebGlRenderingContext::UNSIGNED_SHORT,
             0,
         );
