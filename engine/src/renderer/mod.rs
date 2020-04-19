@@ -8,8 +8,7 @@ const FLOAT32_BYTES: i32 = 4;
 const MAX_QUADS: usize = 3;
 const MAX_VERTICES: usize = MAX_QUADS * 4;
 const MAX_INDICES: usize = MAX_QUADS * 6;
-const VERTEX_SIZE: usize = 7;
-
+const VERTEX_SIZE: usize = 8;
 mod glutil;
 
 pub struct TextureMap {
@@ -59,6 +58,9 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(gl: WebGlRenderingContext, texture: WebGlTexture) -> Renderer {
         // Configure GL
+        gl.enable(WebGlRenderingContext::DEPTH_TEST);
+        gl.depth_func(WebGlRenderingContext::LESS);
+
         gl.enable(WebGlRenderingContext::BLEND);
         gl.blend_func(
             WebGlRenderingContext::ONE,
@@ -128,6 +130,7 @@ impl Renderer {
     pub fn draw_quad(&mut self, pos: na::Vector2<f32>, size: na::Vector2<f32>, texture: Texture) {
         self.vertices.push(pos.x - size.x / 2.0);
         self.vertices.push(pos.y);
+        self.vertices.push(-pos.y); //depth
         self.vertices.push(1.0);
         self.vertices.push(1.0);
         self.vertices.push(1.0);
@@ -136,6 +139,7 @@ impl Renderer {
 
         self.vertices.push(pos.x + size.x / 2.0);
         self.vertices.push(pos.y);
+        self.vertices.push(-pos.y); //depth
         self.vertices.push(1.0);
         self.vertices.push(1.0);
         self.vertices.push(1.0);
@@ -144,6 +148,7 @@ impl Renderer {
 
         self.vertices.push(pos.x - size.x / 2.0);
         self.vertices.push(pos.y + size.y);
+        self.vertices.push(-pos.y); //depth
         self.vertices.push(1.0);
         self.vertices.push(1.0);
         self.vertices.push(1.0);
@@ -152,6 +157,7 @@ impl Renderer {
 
         self.vertices.push(pos.x + size.x / 2.0);
         self.vertices.push(pos.y + size.y);
+        self.vertices.push(-pos.y); //depth
         self.vertices.push(1.0);
         self.vertices.push(1.0);
         self.vertices.push(1.0);
@@ -207,7 +213,7 @@ impl Renderer {
 
         self.gl.vertex_attrib_pointer_with_i32(
             position_attrib_location,
-            2,
+            3,
             WebGlRenderingContext::FLOAT,
             false,
             (VERTEX_SIZE as i32) * FLOAT32_BYTES,
@@ -219,7 +225,7 @@ impl Renderer {
             WebGlRenderingContext::FLOAT,
             false,
             (VERTEX_SIZE as i32) * FLOAT32_BYTES,
-            2 * FLOAT32_BYTES,
+            3 * FLOAT32_BYTES,
         );
         self.gl.vertex_attrib_pointer_with_i32(
             texcoord_attrib_location,
@@ -227,11 +233,17 @@ impl Renderer {
             WebGlRenderingContext::FLOAT,
             false,
             (VERTEX_SIZE as i32) * FLOAT32_BYTES,
-            5 * FLOAT32_BYTES,
+            6 * FLOAT32_BYTES,
         );
 
-        let orthographic_view =
-            na::Orthographic3::new(0.0, self.viewport.x, 0.0, self.viewport.y, 0.0, 1.0);
+        let orthographic_view = na::Orthographic3::new(
+            0.0,
+            self.viewport.x,
+            0.0,
+            self.viewport.y,
+            -self.viewport.y,
+            self.viewport.y,
+        );
 
         self.gl.uniform_matrix4fv_with_f32_array(
             Some(&viewport_uniform_location),

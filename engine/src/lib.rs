@@ -10,8 +10,6 @@ use web_sys::WebGlRenderingContext;
 
 use renderer::Renderer;
 
-use crate::key::KeyManager;
-
 pub mod key;
 pub mod renderer;
 
