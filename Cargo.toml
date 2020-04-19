@@ -34,8 +34,10 @@ console_error_panic_hook = "0.1.6"
 
 web-sys = { version = "0.3.37", features = ['console'] }
 
-nalgebra = "0.16"
-
+nalgebra = "0.17"
+noise = "0.6.0"
+poisson = "0.10.1"
+rand = { version = "0.6.5" }
 engine = { path = "./engine" }
 log = "0.4.6"
 wasm-logger = "0.2.0"
