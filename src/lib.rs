@@ -50,33 +50,29 @@ trait Collidable {
 }
 
 struct SomeWorld {
-    renderables: Vec<Rc<RefCell<dyn Renderable>>>,
-    collidables: Vec<Rc<RefCell<dyn Collidable>>>,
-    player: Rc<RefCell<Player>>,
-    fire: Rc<RefCell<Fire>>,
+    game_objects: Vec<Rc<RefCell<GameObject>>>,
+    player: Rc<RefCell<GameObject>>,
+    fire: Rc<RefCell<GameObject>>,
     last_tick: f64,
 }
 
 impl SomeWorld {
     fn new(player: Player) -> SomeWorld {
-        let player_in_a_box = Rc::new(RefCell::new(player));
-        let fire_in_a_box = Rc::new(RefCell::new(Fire {
+        let player_in_a_box_in_a_box = Rc::new(RefCell::new(GameObject::new_player(player)));
+        let fire_in_a_box_in_a_box = Rc::new(RefCell::new(GameObject::new_collidable(Fire {
             pos: na::Vector2::new(300.0, 300.0),
-            index: 0,
-        }));
-        let tree_in_a_box = Rc::new(RefCell::new(Tree {
+        })));
+        let tree_in_a_box_in_a_box = Rc::new(RefCell::new(GameObject::new_collidable(Tree {
             pos: na::Vector2::new(400.0, 100.0),
-            index: 0,
-        }));
+        })));
         SomeWorld {
-            renderables: vec![
-                tree_in_a_box.clone(),
-                fire_in_a_box.clone(),
-                player_in_a_box.clone(),
+            player: player_in_a_box_in_a_box.clone(),
+            fire: fire_in_a_box_in_a_box.clone(),
+            game_objects: vec![
+                player_in_a_box_in_a_box,
+                fire_in_a_box_in_a_box,
+                tree_in_a_box_in_a_box,
             ],
-            collidables: vec![fire_in_a_box.clone(), tree_in_a_box.clone()],
-            player: player_in_a_box.clone(),
-            fire: fire_in_a_box.clone(),
             last_tick: 0.0,
         }
     }
@@ -100,27 +96,51 @@ impl SomeWorld {
     }
 }
 
-impl engine::World for SomeWorld {
-    fn tick<'a>(
-        &'a mut self,
+impl<'a> engine::World for SomeWorld {
+    fn tick(
+        &mut self,
         key_manager: &KeyManager,
         timestamp: f64,
     ) -> Vec<Rc<RefCell<dyn Renderable>>> {
-        let mut player = self.player.borrow_mut();
         let direction = SomeWorld::get_direction(key_manager);
-        player.speed += direction.scale((timestamp - self.last_tick) as f32 * 0.1);
-        let norm = player.speed.norm();
+        let mut speed = self.player.borrow().player.clone().unwrap().borrow().speed;
+        speed += direction.scale((timestamp - self.last_tick) as f32 * 0.1);
+        let norm = speed.norm();
         if norm > 10.0 {
-            player.speed.scale_mut(10.0 / norm);
+            speed.scale_mut(10.0 / norm);
         }
-        player.speed.scale_mut(0.8);
-        for collidable in &self.collidables {
-            player.speed = collidable.borrow().collide(&player.pos, &player.speed)
+        speed.scale_mut(0.8);
+        for collidable in self
+            .game_objects
+            .iter()
+            .map(|o| o.borrow().collidable.clone())
+            .filter_map(|o| o)
+        {
+            speed = collidable.borrow().collide(
+                &self.player.borrow().player.clone().unwrap().borrow().pos,
+                &speed,
+            )
         }
-        let speed = player.speed.clone();
-        player.pos += speed.scale((timestamp - self.last_tick) as f32 * 0.05);
+        self.player
+            .borrow()
+            .player
+            .clone()
+            .unwrap()
+            .borrow_mut()
+            .pos += speed.scale((timestamp - self.last_tick) as f32 * 0.05);
+        self.player
+            .borrow()
+            .player
+            .clone()
+            .unwrap()
+            .borrow_mut()
+            .speed = speed;
         self.last_tick = timestamp;
-        self.renderables.clone()
+        self.game_objects
+            .iter()
+            .map(|o| o.borrow().renderable.clone())
+            .filter_map(|o| o)
+            .collect()
     }
 }
 
@@ -128,7 +148,6 @@ impl engine::World for SomeWorld {
 struct Player {
     pos: na::Vector2<f32>,
     speed: na::Vector2<f32>,
-    index: u32,
 }
 
 impl Renderable for Player {
@@ -144,7 +163,6 @@ impl Renderable for Player {
 #[derive(Clone)]
 struct Fire {
     pos: na::Vector2<f32>,
-    index: u32,
 }
 
 impl Renderable for Fire {
@@ -171,7 +189,6 @@ impl Collidable for Fire {
 #[derive(Clone)]
 struct Tree {
     pos: na::Vector2<f32>,
-    index: u32,
 }
 
 impl Renderable for Tree {
@@ -195,6 +212,33 @@ impl Collidable for Tree {
     }
 }
 
+#[derive(Clone)]
+struct GameObject {
+    collidable: Option<Rc<RefCell<dyn Collidable>>>,
+    renderable: Option<Rc<RefCell<dyn Renderable>>>,
+    player: Option<Rc<RefCell<Player>>>,
+}
+
+impl GameObject {
+    fn new_collidable<T: Collidable + Renderable + 'static>(collidable: T) -> GameObject {
+        let collidable_in_a_box = Rc::new(RefCell::new(collidable));
+        GameObject {
+            collidable: Some(collidable_in_a_box.clone()),
+            renderable: Some(collidable_in_a_box.clone()),
+            player: None,
+        }
+    }
+
+    fn new_player(player: Player) -> GameObject {
+        let player_in_a_box = Rc::new(RefCell::new(player));
+        GameObject {
+            collidable: None,
+            renderable: Some(player_in_a_box.clone()),
+            player: Some(player_in_a_box.clone()),
+        }
+    }
+}
+
 #[wasm_bindgen]
 pub fn run() {
     #[cfg(debug_assertions)]
@@ -202,7 +246,6 @@ pub fn run() {
     let player = Player {
         pos: na::Vector2::new(100.0, 100.0),
         speed: na::Vector2::zeros(),
-        index: 0,
     };
     engine::start(Box::new(SomeWorld::new(player)) as Box<dyn World>);
 }

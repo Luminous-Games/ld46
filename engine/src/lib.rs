@@ -18,8 +18,8 @@ pub trait Renderable {
 }
 
 pub trait World {
-    fn tick<'a>(
-        &'a mut self,
+    fn tick(
+        &mut self,
         key_manager: &key::KeyManager,
         timestamp: f64,
     ) -> Vec<Rc<RefCell<dyn Renderable>>>;
