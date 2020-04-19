@@ -164,12 +164,12 @@ impl<'a> engine::World for SomeWorld<'a> {
         let fire = self.game_objects.get("fire").unwrap();
 
         let mut speed = player.speed.clone();
-        speed += direction.scale((timestamp - self.last_tick) as f32 * 0.1);
+        speed += direction * ((timestamp - self.last_tick) as f32 * 0.1);
         let norm = speed.norm();
         if norm > 10.0 {
-            speed.scale_mut(10.0 / norm);
+            speed *= 10.0 / norm;
         }
-        speed.scale_mut(0.8);
+        speed *= 0.8;
 
         for game_object in self.game_objects.values() {
             let collider = game_object.get_collider();
@@ -188,7 +188,7 @@ impl<'a> engine::World for SomeWorld<'a> {
         );
 
         let mut player = self.game_objects.get_mut("player").unwrap();
-        player.pos += speed.scale((timestamp - self.last_tick) as f32 * 0.05);
+        player.pos += speed * (timestamp - self.last_tick) as f32 * 0.05;
         player.speed = speed;
         self.last_tick = timestamp;
     }
