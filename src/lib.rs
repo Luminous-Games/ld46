@@ -5,9 +5,7 @@ extern crate wee_alloc;
 use engine::key::{key_codes, KeyManager};
 use engine::renderer::Renderer;
 use engine::{Collider, GameObject, Rend, World};
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
 // Use `wee_alloc` as the global allocator.
@@ -39,24 +37,24 @@ struct SomeWorld<'a> {
 
 impl<'a> SomeWorld<'a> {
     fn new() -> SomeWorld<'a> {
-        let textureMap = engine::renderer::TextureMap::new(2, 1);
+        let texture_map = engine::renderer::TextureMap::new(2, 1);
 
         let mut player = GameObject::new(na::Point2::new(100.0, 100.0));
         player.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(128.0, 128.0),
-            texture: textureMap.get_texture(1, 0),
+            texture: texture_map.get_texture(1, 0),
         }));
         let mut fire = GameObject::new(na::Point2::new(300.0, 300.0));
         fire.add_collider(Collider::new(32.0));
         fire.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(64.0, 64.0),
-            texture: textureMap.get_texture(0, 0),
+            texture: texture_map.get_texture(0, 0),
         }));
         let mut tree = GameObject::new(na::Point2::new(400.9, 100.0));
         tree.add_collider(Collider::new(16.0));
         tree.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(128.0, 128.0),
-            texture: textureMap.get_texture(1, 0),
+            texture: texture_map.get_texture(1, 0),
         }));
         let mut game_objects = HashMap::new();
         game_objects.insert("player", player);
@@ -124,5 +122,5 @@ pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
     log!("Starting game!");
-    engine::start(Box::new(SomeWorld::new()) as Box<dyn World>);
+    engine::start(Box::new(SomeWorld::new()) as Box<dyn World>).unwrap();
 }
