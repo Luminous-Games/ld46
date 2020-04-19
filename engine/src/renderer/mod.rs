@@ -260,14 +260,14 @@ impl Renderer {
         );
 
         let camera_pos_transform =
-            na::Translation3::new(-self.camera.x, -self.camera.y, -self.camera.y);
+            na::Translation3::new(-self.camera.x, -self.camera.y, self.camera.y);
         let orthographic_view = na::Orthographic3::new(
             -self.viewport.x / 2.0,
             self.viewport.x / 2.0,
             -self.viewport.y / 2.0,
             self.viewport.y / 2.0,
-            -self.viewport.y * 2.0 + self.camera.y,
-            self.viewport.y + self.camera.y,
+            -self.viewport.y * 2.0,
+            self.viewport.y * 2.0,
         );
 
         self.gl.uniform_matrix4fv_with_f32_array(

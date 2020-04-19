@@ -1,7 +1,5 @@
 use super::MouseButton;
 
-pub(super) const MOUSE_EVENT_SIZE: usize = 4;
-
 #[derive(Clone, Copy)]
 pub struct MouseEvent {
     pub(crate) event_type: MouseEventType,

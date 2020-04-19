@@ -99,7 +99,7 @@ impl<'a> SomeWorld<'a> {
     fn new() -> SomeWorld<'a> {
         let texture_map = engine::renderer::TextureMap::new(4, 1);
 
-        let mut player = GameObject::new(na::Point2::new(100.0, 100.0));
+        let mut player = GameObject::new(na::Point2::new(0.0, 0.0));
         player.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(128.0, 128.0),
             texture: texture_map.get_texture(1, 0),
