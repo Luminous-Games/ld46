@@ -7,7 +7,6 @@ use wasm_bindgen::JsCast;
 
 pub mod key_codes;
 
-// These must match key_listener.js
 const KEY_CODE_MAX: usize = 300;
 
 #[repr(u8)]
@@ -22,43 +21,45 @@ enum KeyCodeState {
 /// The type managing the state of the keys. Use the `key_code` module for a list
 /// of KeyCodes to query for.
 pub struct KeyManager {
-    /// Raw memory for javascript to write to, used to store the current
-    /// state of the KeyCode (index)
     keys: Rc<RefCell<[KeyCodeState; KEY_CODE_MAX]>>,
 }
 
 impl KeyManager {
     pub(super) fn new() -> KeyManager {
         let window = web_sys::window().expect("global window does not exists");
-
-        // let mut keys = [KeyCodeState::None; KEY_CODE_MAX];
         let keys = Rc::new(RefCell::new([KeyCodeState::None; KEY_CODE_MAX]));
 
-        let k1 = keys.clone();
-        let k2 = keys.clone();
+        // REGISTER CALLBACKS
+
+        let keys_blur = keys.clone();
+        let onblur = Closure::wrap(Box::new(move |_e: web_sys::FocusEvent| {
+            for key_code in 0..KEY_CODE_MAX {
+                keys_blur.borrow_mut()[key_code] = KeyCodeState::Up;
+            }
+        }) as Box<dyn FnMut(web_sys::FocusEvent)>);
+        window.set_onblur(Some(onblur.as_ref().unchecked_ref()));
+        onblur.forget();
+
+        let keys_keyup = keys.clone();
         let onkeyup = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
             if e.key_code() < KEY_CODE_MAX.try_into().unwrap() {
-                k1.borrow_mut()[e.key_code() as usize] = KeyCodeState::Up;
+                keys_keyup.borrow_mut()[e.key_code() as usize] = KeyCodeState::Up;
             }
         }) as Box<dyn FnMut(web_sys::KeyboardEvent)>);
         window.set_onkeyup(Some(onkeyup.as_ref().unchecked_ref()));
         onkeyup.forget();
 
+        let keys_keydown = keys.clone();
         let onkeydown = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
             if e.key_code() < KEY_CODE_MAX.try_into().unwrap() {
-                k2.borrow_mut()[e.key_code() as usize] = KeyCodeState::Down;
+                keys_keydown.borrow_mut()[e.key_code() as usize] = KeyCodeState::Down;
             }
         }) as Box<dyn FnMut(web_sys::KeyboardEvent)>);
         window.set_onkeydown(Some(onkeydown.as_ref().unchecked_ref()));
         onkeydown.forget();
 
-        KeyManager { keys: keys }
+        KeyManager { keys }
     }
-    // #[doc(hidden)]
-    // /// WARNING: JS Exported Function - not intended for normal use
-    // pub fn keys_ptr(&self) -> *const u8 {
-    //     unsafe { ::std::mem::transmute::<*const KeyCodeState, *const u8>(self.keys.as_ptr()) }
-    // }
 
     /// Transition key states as we only get KeyCodeState::Up && KeyCodeState::Down
     /// states set from the listener, it's up to us to transition them to KeyCodeState::None

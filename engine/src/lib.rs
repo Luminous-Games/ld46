@@ -1,4 +1,6 @@
 extern crate nalgebra as na;
+#[macro_use]
+extern crate num_derive;
 extern crate wee_alloc;
 
 use std::cell::RefCell;
@@ -11,6 +13,7 @@ use web_sys::WebGlRenderingContext;
 use renderer::Renderer;
 
 pub mod key;
+pub mod mouse;
 pub mod renderer;
 
 pub trait Renderable {
@@ -101,6 +104,7 @@ impl Renderable for GameObject {
 
 pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
     let mut key_manager = key::KeyManager::new();
+    let mut mouse_manager = mouse::MouseManager::new();
 
     let document = web_sys::window().unwrap().document().unwrap();
     let canvas = document.get_element_by_id("canvas").unwrap();
@@ -163,6 +167,7 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
 
         renderer.set_viewport(viewport);
 
+        mouse_manager.pre_tick_process_mouse_state();
         world.tick(&key_manager, timestamp);
         let gameobjects = world.get_game_objects();
         key_manager.post_tick_update_key_states();
