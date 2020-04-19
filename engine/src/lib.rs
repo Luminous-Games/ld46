@@ -99,12 +99,6 @@ impl Renderable for GameObject {
     }
 }
 
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
-
 pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
     let mut key_manager = key::KeyManager::new();
 
@@ -155,14 +149,14 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
         include_str!("shaders/vertex.glsl"),
         include_str!("shaders/fragment.glsl"),
     );
-    log! {"Engine initialised"};
+    log::info! {"Engine initialised"};
 
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
 
     *g.borrow_mut() = Some(Closure::wrap(Box::new(move |timestamp: f64| {
         let viewport = na::Vector2::new(canvas.width() as f32, canvas.height() as f32);
-        log!("{:?}: {}", viewport, timestamp);
+        log::debug!("{:?}: {}", viewport, timestamp);
         renderer
             .gl
             .viewport(0, 0, viewport.x as i32, viewport.y as i32);

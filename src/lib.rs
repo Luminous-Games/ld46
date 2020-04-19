@@ -12,13 +12,6 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
-
 struct TexturedBox {
     size: na::Vector2<f32>,
     texture: engine::renderer::Texture,
@@ -121,6 +114,7 @@ impl<'a> engine::World for SomeWorld<'a> {
 pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
-    log!("Starting game!");
+    wasm_logger::init(wasm_logger::Config::default());
+    log::info!("Game starting");
     engine::start(Box::new(SomeWorld::new()) as Box<dyn World>).unwrap();
 }
