@@ -23,6 +23,14 @@ impl Rend for TexturedBox {
     }
 }
 
+struct Cam {}
+
+impl Rend for Cam {
+    fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
+        renderer.set_camera(game_object.pos);
+    }
+}
+
 struct SomeWorld<'a> {
     game_objects: HashMap<&'a str, GameObject>,
     last_tick: f64,
@@ -37,6 +45,7 @@ impl<'a> SomeWorld<'a> {
             size: na::Vector2::new(128.0, 128.0),
             texture: texture_map.get_texture(1, 0),
         }));
+        player.add_rend(Box::new(Cam {}));
         let mut fire = GameObject::new(na::Point2::new(300.0, 300.0));
         fire.add_collider(Collider::new(32.0));
         fire.add_rend(Box::new(TexturedBox {

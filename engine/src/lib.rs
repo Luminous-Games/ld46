@@ -28,7 +28,7 @@ pub struct GameObject {
     pub pos: na::Point2<f32>,
     pub speed: na::Vector2<f32>,
     collider: Option<Collider>,
-    rend: Option<Box<dyn Rend>>,
+    rend: Vec<Box<dyn Rend>>,
 }
 impl GameObject {
     pub fn new(pos: na::Point2<f32>) -> GameObject {
@@ -36,7 +36,7 @@ impl GameObject {
             pos,
             speed: na::Vector2::zeros(),
             collider: None,
-            rend: None,
+            rend: vec![],
         }
     }
 
@@ -45,7 +45,7 @@ impl GameObject {
     }
 
     pub fn add_rend(&mut self, rend: Box<dyn Rend>) {
-        self.rend = Some(rend);
+        self.rend.push(rend);
     }
 
     pub fn get_collider(&self) -> &Option<Collider> {
@@ -95,9 +95,8 @@ impl Collider {
 
 impl Renderable for GameObject {
     fn render(&self, renderer: &mut Renderer) {
-        match &self.rend {
-            Some(r) => r.render(renderer, &self),
-            None => (),
+        for r in self.rend.iter() {
+            r.render(renderer, &self);
         }
     }
 }

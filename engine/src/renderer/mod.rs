@@ -53,6 +53,7 @@ pub struct Renderer {
     programs: HashMap<i32, WebGlProgram>,
     selected_program: i32,
     viewport: na::Vector2<f32>,
+    camera: na::Point2<f32>,
 }
 
 impl Renderer {
@@ -106,6 +107,7 @@ impl Renderer {
             selected_program: 0,
             programs: HashMap::new(),
             viewport: na::Vector2::zeros(),
+            camera: na::Point2::new(0.0, 0.0),
         }
     }
 
@@ -125,6 +127,10 @@ impl Renderer {
 
     pub fn set_viewport(&mut self, viewport: na::Vector2<f32>) {
         self.viewport = viewport;
+    }
+
+    pub fn set_camera(&mut self, camera: na::Point2<f32>) {
+        self.camera = camera;
     }
 
     pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
@@ -210,6 +216,10 @@ impl Renderer {
 
         let viewport_uniform_location =
             self.gl.get_uniform_location(&program, "uViewport").unwrap();
+        let viewport_transform_location = self
+            .gl
+            .get_uniform_location(&program, "uTransform")
+            .unwrap();
 
         self.gl.vertex_attrib_pointer_with_i32(
             position_attrib_location,
@@ -236,19 +246,27 @@ impl Renderer {
             6 * FLOAT32_BYTES,
         );
 
+        let camera_pos_transform =
+            na::Translation3::new(-self.camera.x, -self.camera.y, -self.camera.y);
         let orthographic_view = na::Orthographic3::new(
-            0.0,
-            self.viewport.x,
-            0.0,
-            self.viewport.y,
-            -self.viewport.y,
-            self.viewport.y,
+            -self.viewport.x / 2.0,
+            self.viewport.x / 2.0,
+            -self.viewport.y / 2.0,
+            self.viewport.y / 2.0,
+            -self.viewport.y * 2.0 + self.camera.y,
+            self.viewport.y + self.camera.y,
         );
 
         self.gl.uniform_matrix4fv_with_f32_array(
             Some(&viewport_uniform_location),
             false,
             orthographic_view.as_matrix().as_slice(),
+        );
+
+        self.gl.uniform_matrix4fv_with_f32_array(
+            Some(&viewport_transform_location),
+            false,
+            camera_pos_transform.to_homogeneous().as_slice(),
         );
 
         // Use texture 0
