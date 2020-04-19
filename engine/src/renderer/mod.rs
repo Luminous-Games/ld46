@@ -34,7 +34,7 @@ impl TextureMap {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Texture {
     start: na::Vector2<f32>,
     size: na::Vector2<f32>,
@@ -127,7 +127,7 @@ impl Renderer {
         self.viewport = viewport;
     }
 
-    pub fn draw_quad(&mut self, pos: na::Vector2<f32>, size: na::Vector2<f32>, texture: Texture) {
+    pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
         self.vertices.push(pos.x - size.x / 2.0);
         self.vertices.push(pos.y);
         self.vertices.push(-pos.y); //depth

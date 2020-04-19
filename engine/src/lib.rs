@@ -18,12 +18,87 @@ pub trait Renderable {
 }
 
 pub trait World {
-    fn tick(
-        &mut self,
-        key_manager: &key::KeyManager,
-        timestamp: f64,
-    ) -> Vec<Rc<RefCell<dyn Renderable>>>;
+    fn tick(&mut self, key_manager: &key::KeyManager, timestamp: f64);
+    fn get_game_objects(&self) -> Vec<&GameObject>;
 }
+pub struct GameObject {
+    pub pos: na::Point2<f32>,
+    pub speed: na::Vector2<f32>,
+    collider: Option<Collider>,
+    rend: Option<Box<dyn Rend>>,
+}
+impl GameObject {
+    pub fn new(pos: na::Point2<f32>) -> GameObject {
+        GameObject {
+            pos,
+            speed: na::Vector2::zeros(),
+            collider: None,
+            rend: None,
+        }
+    }
+
+    pub fn add_collider(&mut self, collider: Collider) {
+        self.collider = Some(collider);
+    }
+
+    pub fn add_rend(&mut self, rend: Box<dyn Rend>) {
+        self.rend = Some(rend);
+    }
+
+    pub fn get_collider(&self) -> &Option<Collider> {
+        &self.collider
+    }
+}
+
+pub trait Rend {
+    fn render(&self, renderer: &mut Renderer, game_object: &GameObject);
+}
+
+pub struct Collider {
+    range: f32,
+}
+
+impl Collider {
+    pub fn new(range: f32) -> Collider {
+        Collider { range }
+    }
+
+    fn get_range(&self) -> f32 {
+        return self.range;
+    }
+
+    pub fn collide(
+        &self,
+        game_object: &GameObject,
+        pos: &na::Point2<f32>,
+        speed: &na::Vector2<f32>,
+    ) -> na::Vector2<f32> {
+        let mut speed = speed.clone_owned();
+        if na::distance_squared(&game_object.pos, pos) < (self.get_range() + 16.0).powi(2) {
+            if pos.x > game_object.pos.x {
+                speed.x = f32::max(0.0, speed.x);
+            } else {
+                speed.x = f32::min(0.0, speed.x);
+            }
+            if pos.y > game_object.pos.y {
+                speed.y = f32::max(0.0, speed.y);
+            } else {
+                speed.y = f32::min(0.0, speed.y);
+            }
+        };
+        speed
+    }
+}
+
+impl Renderable for GameObject {
+    fn render(&self, renderer: &mut Renderer) {
+        match &self.rend {
+            Some(r) => r.render(renderer, &self),
+            None => (),
+        }
+    }
+}
+
 macro_rules! log {
     ( $( $t:tt )* ) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
@@ -94,10 +169,11 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
 
         renderer.set_viewport(viewport);
 
-        let renderables = world.tick(&key_manager, timestamp);
+        world.tick(&key_manager, timestamp);
+        let gameobjects = world.get_game_objects();
         key_manager.post_tick_update_key_states();
-        for renderable in renderables {
-            renderable.borrow().render(&mut renderer);
+        for gameobject in gameobjects.iter() {
+            gameobject.render(&mut renderer);
         }
 
         renderer.flush();
