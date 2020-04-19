@@ -97,25 +97,25 @@ struct SomeWorld<'a> {
 
 impl<'a> SomeWorld<'a> {
     fn new() -> SomeWorld<'a> {
-        let texture_map = engine::renderer::TextureMap::new(4, 1);
+        let spritesheet = engine::renderer::TextureMap::new(4, 1, "spritesheet".to_string());
 
         let mut player = GameObject::new(na::Point2::new(0.0, 0.0));
         player.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(128.0, 128.0),
-            texture: texture_map.get_texture(1, 0),
+            texture: spritesheet.get_texture(1, 0),
         }));
         player.add_rend(Box::new(Cam {}));
         let mut fire = GameObject::new(na::Point2::new(300.0, 300.0));
         fire.add_collider(Collider::new(32.0));
         fire.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(64.0, 64.0),
-            texture: texture_map.get_texture(0, 0),
+            texture: spritesheet.get_texture(0, 0),
         }));
         let mut tree = GameObject::new(na::Point2::new(400.9, 100.0));
         tree.add_collider(Collider::new(16.0));
         tree.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(128.0, 128.0),
-            texture: texture_map.get_texture(1, 0),
+            texture: spritesheet.get_texture(1, 0),
         }));
 
         let mut thermometer = GameObject::new(na::Point2::new(100.0, 50.0));
@@ -123,7 +123,7 @@ impl<'a> SomeWorld<'a> {
             (2.0, 0.0),
             (2.0, 0.5),
             (2.0, 0.5),
-            texture_map.clone(),
+            spritesheet.clone(),
         )));
 
         let mut game_objects = HashMap::new();

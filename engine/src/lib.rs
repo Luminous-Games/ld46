@@ -5,15 +5,13 @@ extern crate nalgebra as na;
 extern crate num_derive;
 extern crate wee_alloc;
 
+use downcast_rs::Downcast;
+use renderer::Renderer;
 use std::cell::RefCell;
 use std::rc::Rc;
-
-use downcast_rs::Downcast;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext;
-
-use renderer::Renderer;
 
 pub mod key;
 pub mod mouse;
@@ -113,45 +111,12 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
     let canvas = document.get_element_by_id("canvas").unwrap();
     let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
 
-    let texture_image = document
-        .get_element_by_id("texture")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlImageElement>()?;
-
     let gl = canvas
         .get_context("webgl")?
         .unwrap()
         .dyn_into::<WebGlRenderingContext>()?;
 
-    let texture = gl.create_texture().unwrap();
-
-    gl.active_texture(WebGlRenderingContext::TEXTURE0);
-    gl.bind_texture(WebGlRenderingContext::TEXTURE_2D, Some(&texture));
-
-    gl.tex_image_2d_with_u32_and_u32_and_image(
-        WebGlRenderingContext::TEXTURE_2D,
-        0,
-        WebGlRenderingContext::RGBA as i32,
-        WebGlRenderingContext::RGBA,
-        WebGlRenderingContext::UNSIGNED_BYTE,
-        &texture_image,
-    )
-    .unwrap();
-
-    gl.tex_parameteri(
-        WebGlRenderingContext::TEXTURE_2D,
-        WebGlRenderingContext::TEXTURE_MIN_FILTER,
-        WebGlRenderingContext::NEAREST as i32,
-    );
-    gl.tex_parameteri(
-        WebGlRenderingContext::TEXTURE_2D,
-        WebGlRenderingContext::TEXTURE_MAG_FILTER,
-        WebGlRenderingContext::NEAREST as i32,
-    );
-
-    gl.generate_mipmap(WebGlRenderingContext::TEXTURE_2D);
-
-    let mut renderer = Renderer::new(gl, texture);
+    let mut renderer = Renderer::new(gl);
     renderer.load_shader(
         include_str!("shaders/vertex.glsl"),
         include_str!("shaders/fragment.glsl"),

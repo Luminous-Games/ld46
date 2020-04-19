@@ -1,4 +1,5 @@
 import spritesheet from "./images/spritesheet.png";
+import tuustid from "./images/tuustid.png";
 import * as game from "luminous_ld46";
 
 // const aspect = 16 / 8;
@@ -28,8 +29,17 @@ window.addEventListener("resize", function (event) {
   resize(canvas);
 });
 
-const img = document.getElementById("texture");
-img.src = spritesheet;
-img.onload = () => {
-  game.run();
+let loadCount = 0;
+let loadify = () => {
+  ++loadCount;
+  if (loadCount == 2) {
+    game.run();
+  }
 };
+
+const img = document.getElementById("spritesheet");
+img.src = spritesheet;
+img.onload = loadify;
+const img2 = document.getElementById("tuustid");
+img2.src = tuustid;
+img2.onload = loadify;
