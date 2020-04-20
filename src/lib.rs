@@ -344,6 +344,33 @@ impl SomeWorld {
         }
         direction
     }
+
+    fn cut_down_tree(
+        spritesheet: &TextureMap,
+        mut stumps: &mut HashMap<String, GameObject>,
+        tree_name: &String,
+        tree: &&mut GameObject,
+    ) {
+        // Chopping trees creates a stump and a log
+        let mut stump = GameObject::new(tree.pos.clone());
+        stump.add_rend(Box::new(TexturedBox {
+            size: na::Vector2::new(128.0, 128.0),
+            texture: spritesheet.get_texture(3, 0),
+        }));
+        stump
+            .props
+            .insert("stump".to_string(), *tree.props.get("tree").unwrap());
+        stumps.insert(format!("stump{}", tree_name), stump);
+        let mut log = GameObject::new(&tree.pos + Vector2::new(32.0, 32.0));
+        log.add_collider(Collider::new(10.0));
+        log.add_rend(Box::new(TexturedBox {
+            size: na::Vector2::new(64.0, 64.0),
+            texture: spritesheet.get_texture(0, 2),
+        }));
+        log.props
+            .insert("log".to_string(), *tree.props.get("tree").unwrap());
+        stumps.insert(format!("log{}", tree_name), log);
+    }
 }
 
 impl engine::World for SomeWorld {
@@ -359,7 +386,7 @@ impl engine::World for SomeWorld {
         if norm > 10.0 {
             speed *= 10.0 / norm;
         }
-        speed *= 0.8;
+        speed *= 0.7;
 
         if norm * 0.8 < 1.0 {
             speed *= 0.0;
@@ -375,26 +402,29 @@ impl engine::World for SomeWorld {
             if let Some(collider) = game_object.get_collider() {
                 if collider.collide(&game_object, &player_pos, &mut speed) {
                     if key_manager.key_up(key_codes::E) && game_object.props.contains_key("tree") {
-                        // Chopping trees creates a stump and a log
-                        let mut stump = GameObject::new(game_object.pos.clone());
-                        stump.add_rend(Box::new(TexturedBox {
-                            size: na::Vector2::new(128.0, 128.0),
-                            texture: spritesheet.get_texture(3, 0),
-                        }));
-                        stump
-                            .props
-                            .insert("stump".to_string(), *game_object.props.get("tree").unwrap());
-                        stumps.insert(format!("stump{}", key), stump);
-                        let mut log = GameObject::new(&game_object.pos + Vector2::new(32.0, 32.0));
-                        log.add_collider(Collider::new(10.0));
-                        log.add_rend(Box::new(TexturedBox {
-                            size: na::Vector2::new(64.0, 64.0),
-                            texture: spritesheet.get_texture(0, 2),
-                        }));
-                        log.props
-                            .insert("log".to_string(), *game_object.props.get("tree").unwrap());
-                        stumps.insert(format!("log{}", key), log);
-                        return false;
+                        if game_object.props.contains_key("hitting_started")
+                            && timestamp - *game_object.props.get("hitting_started").unwrap() as f64
+                                > 5000.0
+                            && *game_object.props.get("hit_count").unwrap() > 10.0
+                        {
+                            SomeWorld::cut_down_tree(&spritesheet, &mut stumps, key, &game_object);
+                            return false;
+                        } else if !game_object.props.contains_key("hitting_started") {
+                            game_object
+                                .props
+                                .insert("hitting_started".to_string(), timestamp as f32);
+                            game_object.props.insert("hit_count".to_string(), 1.0);
+                            game_object.rend.clear();
+                            game_object.add_rend(Box::new(TexturedBox {
+                                size: na::Vector2::new(128.0, 128.0),
+                                texture: spritesheet.get_texture(2, 0),
+                            }));
+                        } else {
+                            game_object.props.insert(
+                                "hit_count".to_string(),
+                                *game_object.props.get("hit_count").unwrap() + 1.0,
+                            );
+                        }
                     } else if key_manager.key_up(key_codes::SPACE)
                         && game_object.props.contains_key("log")
                         && inventory < 3
@@ -428,9 +458,12 @@ impl engine::World for SomeWorld {
         *fire.props.get_mut("heat").unwrap() = heat;
         log::debug!("{:?}", fire.props);
         let fire = self.game_objects.get_mut("fire").unwrap();
+        if heat < 0.25 {
+            panic!("DEAD");
+        }
         fire.rend[0] = Box::new(TexturedBox {
             size: na::Vector2::new(80.0, 80.0),
-            texture: spritesheet.get_texture((heat * 3.0) as i32, 1),
+            texture: spritesheet.get_texture((heat * 4.0 - 1.0) as i32, 1),
         });
         self.game_objects.get_mut("inventory").unwrap().rend[0]
             .downcast_mut::<Inventory>()
