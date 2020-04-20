@@ -8,7 +8,7 @@ uniform vec2 uFirePos;
 uniform float uFireHeat;
 uniform sampler2D uSampler;
 
-const float c = 500.0;
+const float c = 800.0;
 
 const float LuminancePreservationFactor = 1.0;
 

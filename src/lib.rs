@@ -59,7 +59,7 @@ impl Thermometer {
             filling_pos,
             texture_size,
             texture_map,
-            temperature: 0.5,
+            temperature: 1.0,
         }
     }
 }
@@ -277,17 +277,28 @@ impl SomeWorld {
 
     fn get_direction(key_manager: &KeyManager) -> na::Vector2<f32> {
         let mut direction = na::Vector2::zeros();
-        if key_manager.key_pressed(key_codes::W) || key_manager.key_pressed(key_codes::UP_ARROW) {
+        if key_manager.key_pressed(key_codes::W)
+            || key_manager.key_pressed(key_codes::UP_ARROW)
+            || key_manager.key_pressed(key_codes::K)
+        {
             direction.y += 1.0;
         }
-        if key_manager.key_pressed(key_codes::S) || key_manager.key_pressed(key_codes::DOWN_ARROW) {
+        if key_manager.key_pressed(key_codes::S)
+            || key_manager.key_pressed(key_codes::DOWN_ARROW)
+            || key_manager.key_pressed(key_codes::J)
+        {
             direction.y += -1.0;
         }
-        if key_manager.key_pressed(key_codes::D) || key_manager.key_pressed(key_codes::RIGHT_ARROW)
+        if key_manager.key_pressed(key_codes::D)
+            || key_manager.key_pressed(key_codes::RIGHT_ARROW)
+            || key_manager.key_pressed(key_codes::L)
         {
             direction.x += 1.0;
         }
-        if key_manager.key_pressed(key_codes::A) || key_manager.key_pressed(key_codes::LEFT_ARROW) {
+        if key_manager.key_pressed(key_codes::A)
+            || key_manager.key_pressed(key_codes::LEFT_ARROW)
+            || key_manager.key_pressed(key_codes::H)
+        {
             direction.x += -1.0;
         }
         direction
@@ -324,7 +335,6 @@ impl engine::World for SomeWorld {
                     if key_manager.key_up(key_codes::E) && game_object.props.contains_key("tree") {
                         // Chopping trees creates a stump and a log
                         let mut stump = GameObject::new(game_object.pos.clone());
-                        stump.add_collider(Collider::new(5.0));
                         stump.add_rend(Box::new(TexturedBox {
                             size: na::Vector2::new(128.0, 128.0),
                             texture: TextureMap::new(4, 4, "spritesheet".to_string())
@@ -377,7 +387,7 @@ impl engine::World for SomeWorld {
         let player = self.game_objects.get("player").unwrap();
         let fire = self.game_objects.get("fire").unwrap();
         let conductivity = (timestamp - self.last_tick) as f32 / 8000.0;
-        let c = 300.0; // smaller number == sharper drop-off
+        let c = 800.0; // smaller number == sharper drop-off
         let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + c) / c).powi(2);
         self.game_objects.get_mut("thermometer").unwrap().rend[0]
             .downcast_mut::<Thermometer>()

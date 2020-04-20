@@ -45,6 +45,7 @@ impl MouseManager {
             let cloned_events = mouse_events.clone();
             let cloned_events_index = mouse_events_index.clone();
             let callback = Closure::wrap(Box::new(move |e: web_sys::MouseEvent| {
+                e.prevent_default();
                 cloned_events.borrow_mut()[*cloned_events_index.borrow()] = MouseEvent {
                     event_type: *mouse_type,
                     button: FromPrimitive::from_i16(e.button()).unwrap(),
