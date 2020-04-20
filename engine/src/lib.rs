@@ -6,6 +6,7 @@ extern crate num_derive;
 extern crate wee_alloc;
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use downcast_rs::Downcast;
@@ -32,6 +33,7 @@ pub struct GameObject {
     pub speed: na::Vector2<f32>,
     collider: Option<Collider>,
     pub rend: Vec<Box<dyn Rend>>,
+    pub props: HashMap<String, f32>,
 }
 impl GameObject {
     pub fn new(pos: na::Point2<f32>) -> GameObject {
@@ -40,6 +42,7 @@ impl GameObject {
             speed: na::Vector2::zeros(),
             collider: None,
             rend: vec![],
+            props: HashMap::new(),
         }
     }
 
@@ -79,11 +82,11 @@ impl Collider {
         game_object: &GameObject,
         pos: &na::Point2<f32>,
         speed: &mut na::Vector2<f32>,
-    ) {
+    ) -> bool {
         if f32::abs(game_object.pos.x - pos.x) > (self.get_range() + 16.0)
             || f32::abs(game_object.pos.y - pos.y) > (self.get_range() + 16.0)
         {
-            return;
+            return false;
         }
         if na::distance_squared(&game_object.pos, pos) < (self.get_range() + 16.0).powi(2) {
             if pos.x > game_object.pos.x {
@@ -96,6 +99,9 @@ impl Collider {
             } else {
                 speed.y = f32::min(0.0, speed.y);
             }
+            return true;
+        } else {
+            return false;
         };
     }
 }

@@ -93,6 +93,48 @@ impl Rend for Thermometer {
     }
 }
 
+struct Inventory {
+    size: na::Vector2<f32>,
+    texture_pos: (f32, f32),
+    texture_size: (f32, f32),
+    texture_map: TextureMap,
+    amount: u8,
+}
+
+impl Inventory {
+    pub fn new(
+        texture_pos: (f32, f32),
+        texture_size: (f32, f32),
+        texture_map: TextureMap,
+    ) -> Inventory {
+        Inventory {
+            size: na::Vector2::new(40.0, 40.0),
+            texture_pos,
+            texture_size,
+            texture_map,
+            amount: 0,
+        }
+    }
+}
+
+impl Rend for Inventory {
+    fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
+        let mut size = self.size.clone_owned();
+        size.y *= self.amount as f32;
+        renderer.draw_quad_with_depth(
+            game_object.pos,
+            size,
+            &self.texture_map.get_texture_custom(
+                self.texture_pos.0,
+                self.texture_pos.1,
+                self.texture_size.0,
+                self.texture_size.1 * self.amount as f32,
+            ),
+            -0.11,
+        );
+    }
+}
+
 struct Grass {
     texture_map: TextureMap,
 }
@@ -112,8 +154,8 @@ impl Rend for Grass {
             pos,
             size,
             &self.texture_map.get_very_custom(
-                na::Vector2::new(cam.x / 2048.0, -cam.y / 2048.0),
-                vp / 2048.0,
+                na::Vector2::new(cam.x / 1024.0, -cam.y / 1024.0),
+                vp / 1024.0,
             ),
             -pos.y - vp.y,
         );
@@ -146,7 +188,7 @@ const WORLD_EDGE: f64 = 10000.0;
 
 impl SomeWorld {
     fn new() -> SomeWorld {
-        let spritesheet = engine::renderer::TextureMap::new(4, 2, "spritesheet".to_string());
+        let spritesheet = TextureMap::new(4, 4, "spritesheet".to_string());
 
         let mut player = GameObject::new(na::Point2::new(350.0, 250.0));
         player.add_rend(Box::new(TexturedBox {
@@ -170,6 +212,13 @@ impl SomeWorld {
             engine::renderer::TextureMap::new(4, 1, "ui".to_string()),
         )));
 
+        let mut inventory = GameObject::new(na::Point2::new(-50.0, 0.0));
+        inventory.add_rend(Box::new(Inventory::new(
+            (0.0, 0.0),
+            (1.0, 1.0),
+            engine::renderer::TextureMap::new(4, 1, "ui".to_string()),
+        )));
+
         let mut grass = GameObject::new(na::Point2::new(0.0, 0.0));
         grass.add_rend(Box::new(Grass::new(engine::renderer::TextureMap::new(
             1,
@@ -181,6 +230,7 @@ impl SomeWorld {
         game_objects.insert("player".to_string(), player);
         game_objects.insert("fire".to_string(), fire);
         game_objects.insert("thermometer".to_string(), thermometer);
+        game_objects.insert("inventory".to_string(), inventory);
         game_objects.insert("grass".to_string(), grass);
 
         // let perlin = Perlin::new().set_seed(2);
@@ -210,6 +260,7 @@ impl SomeWorld {
                 size: na::Vector2::new(128.0, 128.0),
                 texture: spritesheet.get_texture(1, 0),
             }));
+            tree.props.insert("tree".to_string(), tree_i as f32);
             game_objects.insert(format!("tree{}", tree_i), tree);
             tree_i += 1;
         }
@@ -245,7 +296,6 @@ impl engine::World for SomeWorld {
         let direction = SomeWorld::get_direction(key_manager);
 
         let player = self.game_objects.get("player").unwrap();
-        let fire = self.game_objects.get("fire").unwrap();
 
         let mut speed = player.speed.clone();
         speed += direction * ((timestamp - self.last_tick) as f32 * 0.1);
@@ -259,13 +309,70 @@ impl engine::World for SomeWorld {
             speed *= 0.0;
         }
 
-        for game_object in self.game_objects.values() {
-            let collider = game_object.get_collider();
-            match collider {
-                Some(collider) => collider.collide(&game_object, &player.pos, &mut speed),
-                None => (),
+        let player_pos = player.pos.clone();
+        let mut stumps = HashMap::new();
+        let mut inventory = self.game_objects.get_mut("inventory").unwrap().rend[0]
+            .downcast_mut::<Inventory>()
+            .unwrap()
+            .amount;
+        self.game_objects.retain(|key, game_object| {
+            if let Some(collider) = game_object.get_collider() {
+                if collider.collide(&game_object, &player_pos, &mut speed) {
+                    if key_manager.key_up(key_codes::E) && game_object.props.contains_key("tree") {
+                        // Chopping trees creates a stump and a log
+                        let mut stump = GameObject::new(game_object.pos.clone());
+                        stump.add_collider(Collider::new(5.0));
+                        stump.add_rend(Box::new(TexturedBox {
+                            size: na::Vector2::new(128.0, 128.0),
+                            texture: TextureMap::new(4, 4, "spritesheet".to_string())
+                                .get_texture(3, 0),
+                        }));
+                        stump
+                            .props
+                            .insert("stump".to_string(), *game_object.props.get("tree").unwrap());
+                        stumps.insert(format!("stump{}", key), stump);
+                        let mut log = GameObject::new(&game_object.pos + Vector2::new(32.0, 32.0));
+                        log.add_collider(Collider::new(10.0));
+                        log.add_rend(Box::new(TexturedBox {
+                            size: na::Vector2::new(64.0, 64.0),
+                            texture: TextureMap::new(4, 4, "spritesheet".to_string())
+                                .get_texture(0, 2),
+                        }));
+                        log.props
+                            .insert("log".to_string(), *game_object.props.get("tree").unwrap());
+                        stumps.insert(format!("log{}", key), log);
+                        return false;
+                    } else if key_manager.key_up(key_codes::SPACE)
+                        && game_object.props.contains_key("log")
+                        && inventory < 3
+                    {
+                        // Picking up a log
+                        inventory += 1;
+                        return false;
+                    }
+                }
             }
+            true
+        });
+        self.game_objects.extend(stumps);
+        // Dropping off logs:
+        let fire = self.game_objects.get("fire").unwrap();
+        if fire
+            .get_collider()
+            .as_ref()
+            .unwrap()
+            .collide(&fire, &player_pos, &mut speed)
+            && key_manager.key_up(key_codes::SPACE)
+        {
+            inventory -= 1;
         }
+        self.game_objects.get_mut("inventory").unwrap().rend[0]
+            .downcast_mut::<Inventory>()
+            .unwrap()
+            .amount = inventory;
+
+        let player = self.game_objects.get("player").unwrap();
+        let fire = self.game_objects.get("fire").unwrap();
         let conductivity = (timestamp - self.last_tick) as f32 / 8000.0;
         let c = 300.0; // smaller number == sharper drop-off
         let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + c) / c).powi(2);

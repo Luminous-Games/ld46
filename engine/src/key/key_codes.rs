@@ -2,6 +2,7 @@
 //! keycodes. All KeyCodes reported from Javascript are tracked in KeyManager
 //! so you can look up KeyCodes not listed here and define your own constants if necessary.
 pub const BACKSPACE: usize = 8;
+pub const SPACE: usize = 32;
 pub const TAB: usize = 9;
 pub const ENTER: usize = 13;
 pub const SHIFT: usize = 16;
