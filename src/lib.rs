@@ -466,7 +466,7 @@ impl engine::World for SomeWorld {
             self.game_objects.retain(|key, game_object| {
                 if let Some(collider) = game_object.get_collider() {
                     if collider.collide(&game_object, &player_pos, &mut speed) {
-                        if (timestamp - last_player_hit as f64) > 500.0
+                        if (timestamp - last_player_hit as f64) > 300.0
                             && key_manager.key_up(key_codes::E)
                             && game_object.props.contains_key("tree")
                         {
