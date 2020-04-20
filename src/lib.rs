@@ -210,7 +210,7 @@ impl Rend for Fire {
                 game_object.pos.x + particle.pos.x,
                 game_object.pos.y + particle.pos.y,
             );
-            let size = heat * 64.0;
+            let size = heat.sqrt() * 128.0;
             renderer.draw_quad_with_depth(
                 render_pos,
                 na::Vector2::new(size, size),
@@ -375,118 +375,170 @@ impl SomeWorld {
 
 impl engine::World for SomeWorld {
     fn tick(&mut self, key_manager: &KeyManager, timestamp: f64) {
+        if (timestamp - self.last_tick) > 500.0 {
+            self.last_tick = timestamp;
+            return;
+        }
         let spritesheet = TextureMap::new(4, 4, "spritesheet".to_string());
         let direction = SomeWorld::get_direction(key_manager);
 
-        let player = self.game_objects.get("player").unwrap();
-
-        let mut speed = player.speed.clone();
-        speed += direction * ((timestamp - self.last_tick) as f32 * 0.1);
-        let norm = speed.norm();
-        if norm > 10.0 {
-            speed *= 10.0 / norm;
-        }
-        speed *= 0.7;
-
-        if norm * 0.8 < 1.0 {
-            speed *= 0.0;
+        {
+            let fire = self.game_objects.get_mut("fire").unwrap();
+            let mut heat = *fire.props.get("heat").unwrap();
+            heat *= 1.0 - (timestamp - self.last_tick) as f32 / 100000.0;
+            *fire.props.get_mut("heat").unwrap() = heat;
         }
 
-        let player_pos = player.pos.clone();
-        let mut stumps = HashMap::new();
-        let mut inventory = self.game_objects.get_mut("inventory").unwrap().rend[0]
-            .downcast_mut::<Inventory>()
-            .unwrap()
-            .amount;
-        self.game_objects.retain(|key, game_object| {
-            if let Some(collider) = game_object.get_collider() {
-                if collider.collide(&game_object, &player_pos, &mut speed) {
-                    if key_manager.key_up(key_codes::E) && game_object.props.contains_key("tree") {
-                        if game_object.props.contains_key("hitting_started")
-                            && timestamp - *game_object.props.get("hitting_started").unwrap() as f64
-                                > 5000.0
-                            && *game_object.props.get("hit_count").unwrap() > 10.0
+        if (self.game_objects.contains_key("player")) {
+            let player = self.game_objects.get("player").unwrap();
+
+            let mut speed = player.speed.clone();
+            speed += direction * ((timestamp - self.last_tick) as f32 * 0.1);
+            let norm = speed.norm();
+            if norm > 10.0 {
+                speed *= 10.0 / norm;
+            }
+            speed *= 0.7;
+
+            if norm * 0.8 < 1.0 {
+                speed *= 0.0;
+            }
+
+            let player_pos = player.pos.clone();
+            let mut stumps = HashMap::new();
+            let mut inventory = self.game_objects.get_mut("inventory").unwrap().rend[0]
+                .downcast_mut::<Inventory>()
+                .unwrap()
+                .amount;
+            self.game_objects.retain(|key, game_object| {
+                if let Some(collider) = game_object.get_collider() {
+                    if collider.collide(&game_object, &player_pos, &mut speed) {
+                        if key_manager.key_up(key_codes::E)
+                            && game_object.props.contains_key("tree")
                         {
-                            SomeWorld::cut_down_tree(&spritesheet, &mut stumps, key, &game_object);
+                            if game_object.props.contains_key("hitting_started")
+                                && timestamp
+                                    - *game_object.props.get("hitting_started").unwrap() as f64
+                                    > 5000.0
+                                && *game_object.props.get("hit_count").unwrap() + 1.0 >= 10.0
+                            {
+                                SomeWorld::cut_down_tree(
+                                    &spritesheet,
+                                    &mut stumps,
+                                    key,
+                                    &game_object,
+                                );
+                                return false;
+                            } else if !game_object.props.contains_key("hitting_started") {
+                                game_object
+                                    .props
+                                    .insert("hitting_started".to_string(), timestamp as f32);
+                                game_object.props.insert("hit_count".to_string(), 1.0);
+                                game_object.rend.clear();
+                                game_object.add_rend(Box::new(TexturedBox {
+                                    size: na::Vector2::new(128.0, 128.0),
+                                    texture: spritesheet.get_texture(2, 0),
+                                }));
+                            } else {
+                                game_object.props.insert(
+                                    "hit_count".to_string(),
+                                    *game_object.props.get("hit_count").unwrap() + 1.0,
+                                );
+                            }
+                        } else if key_manager.key_up(key_codes::SPACE)
+                            && game_object.props.contains_key("log")
+                            && inventory < 3
+                        {
+                            // Picking up a log
+                            inventory += 1;
                             return false;
-                        } else if !game_object.props.contains_key("hitting_started") {
-                            game_object
-                                .props
-                                .insert("hitting_started".to_string(), timestamp as f32);
-                            game_object.props.insert("hit_count".to_string(), 1.0);
-                            game_object.rend.clear();
-                            game_object.add_rend(Box::new(TexturedBox {
-                                size: na::Vector2::new(128.0, 128.0),
-                                texture: spritesheet.get_texture(2, 0),
-                            }));
-                        } else {
-                            game_object.props.insert(
-                                "hit_count".to_string(),
-                                *game_object.props.get("hit_count").unwrap() + 1.0,
-                            );
                         }
-                    } else if key_manager.key_up(key_codes::SPACE)
-                        && game_object.props.contains_key("log")
-                        && inventory < 3
-                    {
-                        // Picking up a log
-                        inventory += 1;
-                        return false;
                     }
                 }
-            }
-            true
-        });
+                true
+            });
 
-        self.game_objects.extend(stumps);
-        let fire = self.game_objects.get_mut("fire").unwrap();
-        let mut heat = *fire.props.get("heat").unwrap();
-        // Dropping off logs:
-        if inventory > 0 {
-            if fire
-                .get_collider()
-                .as_ref()
+            self.game_objects.extend(stumps);
+            let fire = self.game_objects.get_mut("fire").unwrap();
+            let mut heat = *fire.props.get("heat").unwrap();
+            // Dropping off logs:
+            if inventory > 0 {
+                if fire
+                    .get_collider()
+                    .as_ref()
+                    .unwrap()
+                    .collide(&fire, &player_pos, &mut speed)
+                    && key_manager.key_up(key_codes::SPACE)
+                {
+                    inventory -= 1;
+                    heat = f32::min(1.0, heat + 0.3);
+                }
+            }
+            heat *= 1.0 - (timestamp - self.last_tick) as f32 / 100000.0;
+            *fire.props.get_mut("heat").unwrap() = heat;
+            log::debug!("{:?}", fire.props);
+            let fire = self.game_objects.get_mut("fire").unwrap();
+            if heat < 0.25 {
+                panic!("DEAD");
+            }
+            fire.rend[0] = Box::new(TexturedBox {
+                size: na::Vector2::new(80.0, 80.0),
+                texture: spritesheet.get_texture((heat * 4.0 - 1.0) as i32, 1),
+            });
+            self.game_objects.get_mut("inventory").unwrap().rend[0]
+                .downcast_mut::<Inventory>()
                 .unwrap()
-                .collide(&fire, &player_pos, &mut speed)
-                && key_manager.key_up(key_codes::SPACE)
-            {
-                inventory -= 1;
-                heat = f32::min(1.0, heat + 0.3);
+                .amount = inventory;
+
+            let player = self.game_objects.get("player").unwrap();
+            let fire = self.game_objects.get("fire").unwrap();
+            let conductivity = (timestamp - self.last_tick) as f32 / 8000.0;
+            let c = 800.0; // smaller number == sharper drop-off
+            let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + c) / c).powi(2);
+            let mut player_temp = self.game_objects.get_mut("thermometer").unwrap().rend[0]
+                .downcast_mut::<Thermometer>()
+                .unwrap()
+                .temperature *= 1.0 - conductivity;
+            self.game_objects.get_mut("thermometer").unwrap().rend[0]
+                .downcast_mut::<Thermometer>()
+                .unwrap()
+                .temperature += 1.0 / r2 * heat * conductivity;
+
+            let player_temp = self.game_objects.get("thermometer").unwrap().rend[0]
+                .downcast_ref::<Thermometer>()
+                .unwrap()
+                .temperature;
+            let mut player = self.game_objects.get_mut("player").unwrap();
+            player.pos += speed * (timestamp - self.last_tick) as f32 * 0.05;
+            player.speed = speed;
+
+            let player_pos = player.pos;
+
+            if player_temp <= 0.3 {
+                player.rend[0].downcast_mut::<TexturedBox>().unwrap().size =
+                    na::Vector2::new(1.0, 1.0) * 128.0 * ((player_temp - 0.25) / 0.05)
+            }
+            if player_temp < 0.25 {
+                let mut death_watch = GameObject::new(player_pos);
+                death_watch.add_rend(Box::new(Cam {}));
+                self.game_objects
+                    .insert("deathwatch".to_string(), death_watch);
+                self.game_objects.remove("player");
+                self.game_objects.remove("thermometer");
             }
         }
-        heat *= 1.0 - (timestamp - self.last_tick) as f32 / 100000.0;
-        *fire.props.get_mut("heat").unwrap() = heat;
-        log::debug!("{:?}", fire.props);
-        let fire = self.game_objects.get_mut("fire").unwrap();
-        if heat < 0.25 {
-            panic!("DEAD");
+        let fire_pos = self.game_objects.get("fire").unwrap().pos;
+        match self.game_objects.get_mut("deathwatch") {
+            Some(death_watch) => {
+                if (na::distance(&death_watch.pos, &fire_pos)) > 1.0 {
+                    death_watch.pos = na::Point2::new(
+                        fire_pos.x * 0.2 + death_watch.pos.x * 0.8,
+                        fire_pos.y * 0.2 + death_watch.pos.y * 0.8,
+                    );
+                }
+            }
+            None => (),
         }
-        fire.rend[0] = Box::new(TexturedBox {
-            size: na::Vector2::new(80.0, 80.0),
-            texture: spritesheet.get_texture((heat * 4.0 - 1.0) as i32, 1),
-        });
-        self.game_objects.get_mut("inventory").unwrap().rend[0]
-            .downcast_mut::<Inventory>()
-            .unwrap()
-            .amount = inventory;
-
-        let player = self.game_objects.get("player").unwrap();
-        let fire = self.game_objects.get("fire").unwrap();
-        let conductivity = (timestamp - self.last_tick) as f32 / 8000.0;
-        let c = 800.0; // smaller number == sharper drop-off
-        let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + c) / c).powi(2);
-        self.game_objects.get_mut("thermometer").unwrap().rend[0]
-            .downcast_mut::<Thermometer>()
-            .unwrap()
-            .temperature *= 1.0 - conductivity;
-        self.game_objects.get_mut("thermometer").unwrap().rend[0]
-            .downcast_mut::<Thermometer>()
-            .unwrap()
-            .temperature += 1.0 / r2 * heat * conductivity;
-
-        let mut player = self.game_objects.get_mut("player").unwrap();
-        player.pos += speed * (timestamp - self.last_tick) as f32 * 0.05;
-        player.speed = speed;
         self.last_tick = timestamp;
     }
 
