@@ -422,9 +422,9 @@ impl engine::World for SomeWorld {
                 }
                 return;
             }
-            let mut mul = 0.5;
+            let mut mul = 0.4; // bigger value = light goes out slower
             if player_dead {
-                mul = 0.1;
+                mul = 0.2;
             }
             heat *= 1.0 - (timestamp - self.last_tick) as f32 / (100000.0 * mul);
             set_volume(f32::max(0.0, heat - 0.25));
@@ -468,15 +468,15 @@ impl engine::World for SomeWorld {
             self.game_objects.retain(|key, game_object| {
                 if let Some(collider) = game_object.get_collider() {
                     if collider.collide(&game_object, &player_pos, &mut speed) {
-                        if (timestamp - last_player_hit as f64) > 300.0
-                            && key_manager.key_down(key_codes::E)
+                        if (timestamp - last_player_hit as f64) > 200.0
+                            && key_manager.key_down(key_codes::SPACE)
                             && game_object.props.contains_key("tree")
                         {
                             log::debug!("Whack!");
                             dfhh();
                             last_player_hit = timestamp as f32;
                             let hit_count = game_object.props.get("hit_count").unwrap_or(&0.0);
-                            if hit_count + 1.0 >= 10.0 {
+                            if hit_count + 1.0 >= 5.0 {
                                 SomeWorld::cut_down_tree(
                                     &spritesheet,
                                     &mut stumps,
@@ -494,7 +494,7 @@ impl engine::World for SomeWorld {
                                     texture: spritesheet.get_texture(2, 0),
                                 }));
                             }
-                        } else if key_manager.key_down(key_codes::SPACE)
+                        } else if key_manager.key_down(key_codes::E)
                             && game_object.props.contains_key("log")
                             && inventory < 3
                         {
@@ -537,7 +537,7 @@ impl engine::World for SomeWorld {
                     .as_ref()
                     .unwrap()
                     .collide(&fire, &player_pos, &mut speed)
-                    && key_manager.key_down(key_codes::SPACE)
+                    && key_manager.key_down(key_codes::E)
                 {
                     inventory -= 1;
                     heat = f32::min(1.0, heat + 0.3);
@@ -552,8 +552,8 @@ impl engine::World for SomeWorld {
 
             let player = self.game_objects.get("player").unwrap();
             let fire = self.game_objects.get("fire").unwrap();
-            let conductivity = (timestamp - self.last_tick) as f32 / 8000.0;
-            let c = 800.0; // smaller number == sharper drop-off
+            let conductivity = (timestamp - self.last_tick) as f32 / 6000.0;
+            let c = 600.0; // smaller number == sharper drop-off
             let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + c) / c).powi(2);
             self.game_objects.get_mut("thermometer").unwrap().rend[0]
                 .downcast_mut::<Thermometer>()

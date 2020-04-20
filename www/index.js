@@ -44,7 +44,7 @@ function startGame() {
   const audio2 = new Audio(dfhh);
   window.audio2 = audio2;
   audio2.loop = false;
-  audio2.volume = 0.2;
+  audio2.volume = 0.1;
 
   const canvas = document.getElementById("canvas");
   canvas.style.display = "block";
