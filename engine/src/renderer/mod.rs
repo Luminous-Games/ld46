@@ -1,6 +1,6 @@
 extern crate nalgebra as na;
 
-use std::collections::HashMap;
+use halfbrown::HashMap;
 
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlTexture};
 

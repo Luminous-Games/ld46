@@ -1,5 +1,6 @@
 #[cfg(debug_assertions)]
 extern crate console_error_panic_hook;
+extern crate hashers;
 extern crate nalgebra as na;
 extern crate poisson;
 extern crate rand;
@@ -7,6 +8,7 @@ extern crate wee_alloc;
 
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::hash::BuildHasherDefault;
 
 use na::{Point2, Vector2};
 use noise::{NoiseFn, Perlin, Seedable};
@@ -180,7 +182,7 @@ impl Rend for Fire {
 }
 
 struct SomeWorld {
-    game_objects: HashMap<String, GameObject>,
+    game_objects: HashMap<String, GameObject, BuildHasherDefault<hashers::fnv::FNV1aHasher32>>,
     last_tick: f64,
 }
 
@@ -226,7 +228,8 @@ impl SomeWorld {
             "grass".to_string(),
         ))));
 
-        let mut game_objects = HashMap::new();
+        let mut game_objects =
+            HashMap::with_hasher(BuildHasherDefault::<hashers::fnv::FNV1aHasher32>::default());
         game_objects.insert("player".to_string(), player);
         game_objects.insert("fire".to_string(), fire);
         game_objects.insert("thermometer".to_string(), thermometer);
@@ -379,7 +382,7 @@ impl engine::World for SomeWorld {
         self.game_objects.get_mut("thermometer").unwrap().rend[0]
             .downcast_mut::<Thermometer>()
             .unwrap()
-            .temperature *= (1.0 - conductivity);
+            .temperature *= 1.0 - conductivity;
         self.game_objects.get_mut("thermometer").unwrap().rend[0]
             .downcast_mut::<Thermometer>()
             .unwrap()

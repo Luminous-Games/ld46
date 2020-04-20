@@ -35,7 +35,7 @@ void main() {
   float r = length(vPosition - uFirePos);
   float r2 = (((max(0.0, r) - 48.0) + c) / c);
   r2 = r2 * r2;
-  float temperature = clamp(10000.0 - (((uFireHeat) * 10000.0) / r2), 2000.0, 10000.0);
+  float temperature = clamp(10000.0 - (((uFireHeat) * 10000.0) / r2), 4000.0, 10000.0);
 
   vec3 inColor = texColor.rgb;
 
