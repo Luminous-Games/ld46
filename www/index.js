@@ -2,7 +2,7 @@ import spritesheet from "./images/spritesheet.png";
 import tuustid from "./images/tuustid.png";
 import ui from "./images/ui.png";
 import grass from "./images/tuustimaa.png";
-import character from "./images/character.png"
+import character from "./images/character.png";
 import ludum46 from "./music/ludum46.m4a";
 import * as game from "luminous_ld46";
 
@@ -48,7 +48,7 @@ function startGame() {
   mute.style.right = "0";
   mute.onclick = function () {
     audio.muted = !audio.muted;
-    mute.text = audio.muted ? "Unmute" : "Mute";
+    mute.textContent = audio.muted ? "Unmute" : "Mute";
   };
   mute.textContent = "Mute";
   document.body.appendChild(mute);
