@@ -123,12 +123,12 @@ impl SomeWorld {
             texture: spritesheet.get_texture(0, 0),
         }));
 
-        let mut thermometer = GameObject::new(na::Point2::new(100.0, 50.0));
+        let mut thermometer = GameObject::new(na::Point2::new(0.0, 150.0));
         thermometer.add_rend(Box::new(Thermometer::new(
             (2.0, 0.0),
             (2.0, 0.5),
             (2.0, 0.5),
-            spritesheet.clone(),
+            engine::renderer::TextureMap::new(4, 1, "ui".to_string()),
         )));
 
         let mut game_objects = HashMap::new();

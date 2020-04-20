@@ -1,5 +1,6 @@
 import spritesheet from "./images/spritesheet.png";
 import tuustid from "./images/tuustid.png";
+import ui from "./images/ui.png";
 import * as game from "luminous_ld46";
 
 // const aspect = 16 / 8;
@@ -32,7 +33,7 @@ window.addEventListener("resize", function (event) {
 let loadCount = 0;
 let loadify = () => {
   ++loadCount;
-  if (loadCount == 2) {
+  if (loadCount === 3) {
     game.run();
   }
 };
@@ -43,3 +44,7 @@ img.onload = loadify;
 const img2 = document.getElementById("tuustid");
 img2.src = tuustid;
 img2.onload = loadify;
+const img3 = document.getElementById("ui");
+img3.src = ui;
+img3.onload = loadify;
+

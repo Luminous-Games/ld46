@@ -152,8 +152,10 @@ impl Renderer {
 
     pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
         if !self.vertices.contains_key(&texture.texture_name) {
-            self.vertices
-                .insert(texture.texture_name.to_owned(), Vec::with_capacity(MAX_VERTICES * VERTEX_SIZE));
+            self.vertices.insert(
+                texture.texture_name.to_owned(),
+                Vec::with_capacity(MAX_VERTICES * VERTEX_SIZE),
+            );
         }
         let vertices = self.vertices.get_mut(&texture.texture_name).unwrap();
 
@@ -195,6 +197,11 @@ impl Renderer {
     }
 
     pub fn flush(&mut self) {
+        self.gl.clear_color(0.4, 0.57, 0.4, 1.0);
+        self.gl.clear(
+            WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT,
+        );
+
         for (texture_name, vertices) in self.vertices.iter() {
             if !self.textures.contains_key(texture_name) {
                 self.textures.insert(
@@ -202,14 +209,23 @@ impl Renderer {
                     glutil::load_texture(&self.gl, texture_name),
                 );
             }
-            self.draw(vertices, self.textures.get(texture_name).unwrap());
+            self.draw(
+                vertices,
+                self.textures.get(texture_name).unwrap(),
+                texture_name == "ui",
+            );
         }
         for (_, vertices) in self.vertices.iter_mut() {
             vertices.clear();
         }
+
+        self.gl.clear_color(0.0, 0.0, 0.0, 1.0);
+        self.gl.color_mask(false, false, false, true);
+        self.gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
+        self.gl.color_mask(true, true, true, true);
     }
 
-    fn draw(&self, vertices: &Vec<f32>, texture: &WebGlTexture) {
+    fn draw(&self, vertices: &Vec<f32>, texture: &WebGlTexture, ui: bool) {
         let program = self.programs.get(&self.selected_program).unwrap();
         self.gl.use_program(Some(program));
 
@@ -281,8 +297,11 @@ impl Renderer {
             6 * FLOAT32_BYTES,
         );
 
-        let camera_pos_transform =
-            na::Translation3::new(-self.camera.x, -self.camera.y, self.camera.y);
+        let camera_pos_transform = if ui {
+            na::Translation3::new(0.0, 0.0, 0.0)
+        } else {
+            na::Translation3::new(-self.camera.x, -self.camera.y, self.camera.y)
+        };
         let orthographic_view = na::Orthographic3::new(
             -self.viewport.x / 2.0,
             self.viewport.x / 2.0,
@@ -313,21 +332,11 @@ impl Renderer {
             .bind_texture(WebGlRenderingContext::TEXTURE_2D, Some(&texture));
         self.gl.uniform1i(Some(&sampler_uniform_location), 0);
 
-        self.gl.clear_color(0.4, 0.57, 0.4, 1.0);
-        self.gl.clear(
-            WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT,
-        );
-
         self.gl.draw_elements_with_i32(
             WebGlRenderingContext::TRIANGLES,
             (vertices.len() as i32) / (4 * VERTEX_SIZE as i32) * 6,
             WebGlRenderingContext::UNSIGNED_SHORT,
             0,
         );
-
-        self.gl.clear_color(0.0, 0.0, 0.0, 1.0);
-        self.gl.color_mask(false, false, false, true);
-        self.gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT);
-        self.gl.color_mask(true, true, true, true);
     }
 }
