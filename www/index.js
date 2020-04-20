@@ -5,6 +5,8 @@ import grass from "./images/tuustimaa.png";
 import character from "./images/character.png";
 import ludum46 from "./music/ludum46.m4a";
 import dfhh from "./music/dfhh.mp3";
+import duue from "./music/duue.mp3";
+import quipp from "./music/quipp.mp3";
 import * as game from "luminous_ld46";
 
 // const aspect = 16 / 8;
@@ -45,6 +47,16 @@ function startGame() {
   window.audio2 = audio2;
   audio2.loop = false;
   audio2.volume = 0.1;
+
+  const audio3 = new Audio(duue);
+  window.audio3 = audio3;
+  audio3.loop = false;
+  audio3.volume = 0.5;
+
+  const audio4 = new Audio(quipp);
+  window.audio4 = audio4;
+  audio4.loop = false;
+  audio4.volume = 0.2;
 
   const canvas = document.getElementById("canvas");
   canvas.style.display = "block";

@@ -499,6 +499,7 @@ impl engine::World for SomeWorld {
                             && inventory < 3
                         {
                             //         // Picking up a log
+                            duue();
                             inventory += 1;
                             return false;
                         }
@@ -539,6 +540,7 @@ impl engine::World for SomeWorld {
                     .collide(&fire, &player_pos, &mut speed)
                     && key_manager.key_down(key_codes::E)
                 {
+                    quipp();
                     inventory -= 1;
                     heat = f32::min(1.0, heat + 0.3);
                 }
@@ -604,6 +606,8 @@ impl engine::World for SomeWorld {
 extern "C" {
     fn set_volume(v: f32);
     fn dfhh();
+    fn duue();
+    fn quipp();
 }
 
 #[wasm_bindgen]
