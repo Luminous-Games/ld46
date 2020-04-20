@@ -469,7 +469,7 @@ impl engine::World for SomeWorld {
                 if let Some(collider) = game_object.get_collider() {
                     if collider.collide(&game_object, &player_pos, &mut speed) {
                         if (timestamp - last_player_hit as f64) > 300.0
-                            && key_manager.key_up(key_codes::E)
+                            && key_manager.key_down(key_codes::E)
                             && game_object.props.contains_key("tree")
                         {
                             log::debug!("Whack!");
@@ -494,7 +494,7 @@ impl engine::World for SomeWorld {
                                     texture: spritesheet.get_texture(2, 0),
                                 }));
                             }
-                        } else if key_manager.key_up(key_codes::SPACE)
+                        } else if key_manager.key_down(key_codes::SPACE)
                             && game_object.props.contains_key("log")
                             && inventory < 3
                         {
@@ -537,7 +537,7 @@ impl engine::World for SomeWorld {
                     .as_ref()
                     .unwrap()
                     .collide(&fire, &player_pos, &mut speed)
-                    && key_manager.key_up(key_codes::SPACE)
+                    && key_manager.key_down(key_codes::SPACE)
                 {
                     inventory -= 1;
                     heat = f32::min(1.0, heat + 0.3);
