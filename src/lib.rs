@@ -234,8 +234,8 @@ impl SomeWorld {
 
         let mut player = GameObject::new(na::Point2::new(350.0, 250.0));
         player.add_rend(Box::new(TexturedBox {
-            size: na::Vector2::new(128.0, 128.0),
-            texture: spritesheet.get_texture(0, 0),
+            size: na::Vector2::new(64.0, 128.0),
+            texture: spritesheet.get_texture_custom(3.0, 2.0, 1.0, 2.0),
         }));
         player.add_rend(Box::new(Cam {}));
         let mut fire = GameObject::new(na::Point2::new(300.0, 280.0));
@@ -317,7 +317,7 @@ impl SomeWorld {
     }
 
     fn get_direction(key_manager: &KeyManager) -> na::Vector2<f32> {
-        let mut direction = na::Vector2::<f32>::zeros();
+        let mut direction: na::Vector2<f32> = na::Vector2::<f32>::zeros();
         if key_manager.key_pressed(key_codes::W)
             || key_manager.key_pressed(key_codes::UP_ARROW)
             || key_manager.key_pressed(key_codes::K)

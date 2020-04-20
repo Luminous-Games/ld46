@@ -24,12 +24,16 @@
       }
       #tutorial {
         margin: 40px auto;
-        max-width: 650px;
+        max-width: 550px;
         line-height: 1.6;
         font-size: 18px;
         color: #444;
         padding: 0 10px;
       }
+      #character {
+        float: right;
+      }
+
       h1,
       h2,
       h3 {
@@ -64,18 +68,21 @@
       javascript in your browser.</noscript
     >
     <div id="tutorial">
-      <h1>Hello!</h1>
-      <p>Keep the fire alive!</p>
-      <p>
-        If you venture too far from the fire for too long you'll freeze. You'll
-        be unable to keep the fire alive when dead...
-      </p>
-      <ul>
-        <li>WASD or ← → ↑ ↓ or hjkl - move around</li>
-        <li>E (repeatedly) - chop down trees</li>
-        <li>SPACE - pick up logs / place them into fire</li>
-      </ul>
-      <button id="start_button" disabled autofocus>START</button>
+      <img id="character" height="128px" width="64px">
+      <div id="tutorial_text">
+        <h1>Hello!</h1>
+        <p>Keep the fire alive!</p>
+        <p>
+          If you venture too far from the fire for too long you'll freeze. You'll
+          be unable to keep the fire alive when dead...
+        </p>
+        <ul>
+          <li>WASD or ← → ↑ ↓ (or HJKL) - move around</li>
+          <li>E (repeatedly) - chop down trees</li>
+          <li>SPACE - pick up logs / place them into fire</li>
+        </ul>
+        <button id="start_button" disabled autofocus>START</button>
+      </div>
     </div>
     <img id="spritesheet" style="display: none;" />
     <img id="tuustid" style="display: none;" />

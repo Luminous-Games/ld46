@@ -2,6 +2,7 @@ import spritesheet from "./images/spritesheet.png";
 import tuustid from "./images/tuustid.png";
 import ui from "./images/ui.png";
 import grass from "./images/tuustimaa.png";
+import character from "./images/character.png"
 import ludum46 from "./music/ludum46.m4a";
 import * as game from "luminous_ld46";
 
@@ -65,6 +66,9 @@ let loadify = () => {
     startButton.disabled = false;
   }
 };
+
+const img0 = document.getElementById("character");
+img0.src = character;
 
 const img = document.getElementById("spritesheet");
 img.src = spritesheet;
