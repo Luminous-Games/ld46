@@ -1,6 +1,7 @@
 import spritesheet from "./images/spritesheet.png";
 import tuustid from "./images/tuustid.png";
 import ui from "./images/ui.png";
+import grass from "./images/tuustimaa.png";
 import * as game from "luminous_ld46";
 
 // const aspect = 16 / 8;
@@ -33,7 +34,7 @@ window.addEventListener("resize", function (event) {
 let loadCount = 0;
 let loadify = () => {
   ++loadCount;
-  if (loadCount === 3) {
+  if (loadCount === 4) {
     game.run();
   }
 };
@@ -47,4 +48,6 @@ img2.onload = loadify;
 const img3 = document.getElementById("ui");
 img3.src = ui;
 img3.onload = loadify;
-
+const img4 = document.getElementById("grass");
+img4.src = grass;
+img4.onload = loadify;

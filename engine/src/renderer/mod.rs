@@ -50,6 +50,13 @@ impl TextureMap {
             texture_name: self.texture_name.to_owned(),
         }
     }
+    pub fn get_very_custom(&self, start: na::Vector2<f32>, size: na::Vector2<f32>) -> Texture {
+        Texture {
+            start,
+            size,
+            texture_name: self.texture_name.to_owned(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -156,11 +163,11 @@ impl Renderer {
     }
 
     pub fn set_camera(&mut self, camera: na::Point2<f32>) {
-        self.camera = camera;
+        self.camera = na::Point2::new(camera.x.round(), camera.y.round());
     }
 
-    pub fn get_camera(&mut self) -> &na::Point2<f32> {
-        &self.camera
+    pub fn get_camera(&self) -> na::Point2<f32> {
+        self.camera
     }
 
     pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
@@ -220,7 +227,7 @@ impl Renderer {
     }
 
     pub fn flush(&mut self) {
-        self.gl.clear_color(0.4, 0.57, 0.4, 1.0);
+        self.gl.clear_color(0.8, 1.0, 0.8, 1.0);
         self.gl.clear(
             WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT,
         );

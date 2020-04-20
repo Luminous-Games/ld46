@@ -17,7 +17,7 @@ use rand::{Rng, SeedableRng};
 use wasm_bindgen::prelude::*;
 
 use engine::key::{key_codes, KeyManager};
-use engine::renderer::{Renderer, TextureMap};
+use engine::renderer::{Renderer, Texture, TextureMap};
 use engine::{Collider, GameObject, Rend, World};
 
 // Use `wee_alloc` as the global allocator.
@@ -73,7 +73,7 @@ impl Rend for Thermometer {
                 self.texture_size.0,
                 self.texture_size.1,
             ),
-            -0.2,
+            -0.11,
         );
         let mut filling_size = self.size.clone_owned();
         filling_size.x *= self.temperature;
@@ -88,7 +88,7 @@ impl Rend for Thermometer {
                 self.texture_size.0 * self.temperature,
                 self.texture_size.1,
             ),
-            -0.2,
+            -0.11,
         );
     }
 }
@@ -103,12 +103,20 @@ impl Grass {
     }
 }
 impl Rend for Grass {
-    fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
+    fn render(&self, renderer: &mut Renderer, _game_object: &GameObject) {
         let cam = renderer.get_camera();
         let vp = renderer.get_viewport();
-        // let pos = na::Vector2::new(cam, - vp / 2);
+        let pos = na::Point2::new(cam.x, cam.y - vp.y / 2.0);
         let size = vp;
-        // renderer.draw_quad_with_depth(cam., size: na::Vector2<f32>, texture: &Texture, )
+        renderer.draw_quad_with_depth(
+            pos,
+            size,
+            &self.texture_map.get_very_custom(
+                na::Vector2::new(cam.x / 2048.0, -cam.y / 2048.0),
+                vp / 2048.0,
+            ),
+            -pos.y - vp.y,
+        );
     }
 }
 
@@ -236,6 +244,10 @@ impl engine::World for SomeWorld {
             speed *= 10.0 / norm;
         }
         speed *= 0.8;
+
+        if norm * 0.8 < 1.0 {
+            speed *= 0.0;
+        }
 
         for game_object in self.game_objects.values() {
             let collider = game_object.get_collider();
