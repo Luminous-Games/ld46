@@ -73,7 +73,7 @@ impl Rend for Thermometer {
                 self.texture_size.0,
                 self.texture_size.1,
             ),
-            -0.1,
+            -0.2,
         );
         let mut filling_size = self.size.clone_owned();
         filling_size.x *= self.temperature;
@@ -90,6 +90,25 @@ impl Rend for Thermometer {
             ),
             0.1,
         );
+    }
+}
+
+struct Grass {
+    texture_map: TextureMap,
+}
+
+impl Grass {
+    pub fn new(texture_map: TextureMap) -> Grass {
+        Grass { texture_map }
+    }
+}
+impl Rend for Grass {
+    fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
+        let cam = renderer.get_camera();
+        let vp = renderer.get_viewport();
+        // let pos = na::Vector2::new(cam, - vp / 2);
+        let size = vp;
+        // renderer.draw_quad_with_depth(cam., size: na::Vector2<f32>, texture: &Texture, )
     }
 }
 
@@ -112,7 +131,7 @@ impl SomeWorld {
     fn new() -> SomeWorld {
         let spritesheet = engine::renderer::TextureMap::new(4, 1, "spritesheet".to_string());
 
-        let mut player = GameObject::new(na::Point2::new(0.0, 0.0));
+        let mut player = GameObject::new(na::Point2::new(350.0, 250.0));
         player.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(128.0, 128.0),
             texture: spritesheet.get_texture(1, 0),
@@ -133,10 +152,18 @@ impl SomeWorld {
             engine::renderer::TextureMap::new(4, 1, "ui".to_string()),
         )));
 
+        let mut grass = GameObject::new(na::Point2::new(0.0, 0.0));
+        grass.add_rend(Box::new(Grass::new(engine::renderer::TextureMap::new(
+            1,
+            1,
+            "grass".to_string(),
+        ))));
+
         let mut game_objects = HashMap::new();
         game_objects.insert("player".to_string(), player);
         game_objects.insert("fire".to_string(), fire);
         game_objects.insert("thermometer".to_string(), thermometer);
+        game_objects.insert("grass".to_string(), grass);
 
         // let perlin = Perlin::new().set_seed(2);
         const TREE_COLLISION_RANGE: f32 = 16.0;

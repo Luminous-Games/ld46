@@ -146,8 +146,21 @@ impl Renderer {
         self.viewport = viewport;
     }
 
+    pub fn get_viewport(&self) -> na::Vector2<f32> {
+        let aspect_ratio = self.viewport.x / self.viewport.y;
+        const DESIRED_AREA: f32 = 1600.0 * 800.0;
+        let width_sq = DESIRED_AREA * aspect_ratio;
+        let width = width_sq.sqrt();
+
+        na::Vector2::new(width, width / aspect_ratio)
+    }
+
     pub fn set_camera(&mut self, camera: na::Point2<f32>) {
         self.camera = camera;
+    }
+
+    pub fn get_camera(&mut self) -> &na::Point2<f32> {
+        &self.camera
     }
 
     pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
@@ -307,21 +320,25 @@ impl Renderer {
             6 * FLOAT32_BYTES,
         );
 
+        let viewport = self.get_viewport();
+
         let camera_pos_transform = if ui {
             na::Translation3::new(0.0, 0.0, 0.0)
         } else {
-            na::Translation3::new(-self.camera.x, -self.camera.y, self.camera.y)
+            na::Translation3::new(
+                -self.camera.x,
+                -self.camera.y,
+                self.camera.y - viewport.y * 2.0,
+            )
         };
-
-        let viewport = na::Vector2::new(1600.0, 1600.0 * self.viewport.y / self.viewport.x);
 
         let orthographic_view = na::Orthographic3::new(
             -viewport.x / 2.0,
             viewport.x / 2.0,
             -viewport.y / 2.0,
             viewport.y / 2.0,
-            -viewport.y * 2.0,
-            viewport.y * 2.0,
+            0.1,
+            viewport.y * 4.0,
         );
 
         self.gl.uniform_matrix4fv_with_f32_array(
