@@ -137,7 +137,7 @@ const WORLD_EDGE: f64 = 10000.0;
 
 impl SomeWorld {
     fn new() -> SomeWorld {
-        let spritesheet = engine::renderer::TextureMap::new(4, 1, "spritesheet".to_string());
+        let spritesheet = engine::renderer::TextureMap::new(4, 2, "spritesheet".to_string());
 
         let mut player = GameObject::new(na::Point2::new(350.0, 250.0));
         player.add_rend(Box::new(TexturedBox {
@@ -149,7 +149,7 @@ impl SomeWorld {
         fire.add_collider(Collider::new(32.0));
         fire.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(64.0, 64.0),
-            texture: spritesheet.get_texture(0, 0),
+            texture: spritesheet.get_texture(2, 0),
         }));
 
         let mut thermometer = GameObject::new(na::Point2::new(0.0, 150.0));
@@ -257,7 +257,7 @@ impl engine::World for SomeWorld {
             }
         }
         let conductivity = (timestamp - self.last_tick) as f32 / 1000.0;
-        let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + 1000.0) / 1000.0).powi(2);
+        let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + 2000.0) / 2000.0).powi(2);
         self.game_objects.get_mut("thermometer").unwrap().rend[0]
             .downcast_mut::<Thermometer>()
             .unwrap()
