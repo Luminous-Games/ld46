@@ -573,7 +573,7 @@ impl engine::World for SomeWorld {
 
             if player_temp <= 0.3 {
                 player.rend[0].downcast_mut::<TexturedBox>().unwrap().size =
-                    na::Vector2::new(1.0, 1.0) * 128.0 * ((player_temp - 0.25) / 0.05)
+                    na::Vector2::new(0.5, 1.0) * 128.0 * ((player_temp - 0.25) / 0.05)
             }
             if player_temp < 0.25 {
                 let mut death_watch = GameObject::new(player_pos);
