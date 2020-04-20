@@ -13,7 +13,10 @@ module.exports = {
     new WasmPackPlugin({
       crateDirectory: path.resolve(__dirname, "."),
       outName: "luminous_ld46",
-      watchDirectories: [path.resolve(__dirname, "engine/src")],
+      watchDirectories: [
+        path.resolve(__dirname, "engine/src"),
+        path.resolve(__dirname, "www"),
+      ],
     }),
     new HtmlWebpackPlugin({
       title: "LD46 game by Luminous",

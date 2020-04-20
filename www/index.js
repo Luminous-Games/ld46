@@ -35,6 +35,7 @@ window.addEventListener("resize", function (event) {
 
 function startGame() {
   const audio = new Audio(ludum46);
+  window.audio = audio;
   audio.loop = true;
   audio.volume = 0.2;
   audio.play();
@@ -82,3 +83,7 @@ img3.onload = loadify;
 const img4 = document.getElementById("grass");
 img4.src = grass;
 img4.onload = loadify;
+
+export function set_volume(v) {
+  return (audio.volume = v);
+}

@@ -596,11 +596,17 @@ impl engine::World for SomeWorld {
     }
 }
 
+#[wasm_bindgen(module = "/www/def.js")]
+extern "C" {
+    fn set_volume(v: f32);
+}
+
 #[wasm_bindgen]
 pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
     wasm_logger::init(wasm_logger::Config::default());
+    set_volume(0.0);
     log::info!("Game starting");
     engine::start(Box::new(SomeWorld::new()) as Box<dyn World>).unwrap();
 }
