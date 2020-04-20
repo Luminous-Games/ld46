@@ -22,21 +22,60 @@
         background: green;
         display: block;
       }
+      #tutorial {
+        margin: 40px auto;
+        max-width: 650px;
+        line-height: 1.6;
+        font-size: 18px;
+        color: #444;
+        padding: 0 10px;
+      }
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+      }
+
+      button {
+        display: inline-block;
+        padding: 0.35em 1.2em;
+        border: 0.1em solid #111111;
+        background-color: #ffffff;
+        margin: 0 0.3em 0.3em 0;
+        border-radius: 0.12em;
+        box-sizing: border-box;
+        text-decoration: none;
+        font-family: "Roboto", sans-serif;
+        font-weight: 300;
+        color: #111111;
+        text-align: center;
+        transition: all 0.2s;
+      }
+      button:hover {
+        transition: color 0.3s, background-color 0.3s;
+        color: #ffffff;
+        background-color: #111111;
+      }
     </style>
   </head>
   <body>
-    <noscript>This page contains webassembly and javascript content, please enable
-      javascript in your browser.</noscript>
+    <noscript
+      >This page contains webassembly and javascript content, please enable
+      javascript in your browser.</noscript
+    >
     <div id="tutorial">
       <h1>Hello!</h1>
       <p>Keep the fire alive!</p>
-      <p>If you venture too far from the fire for too long you'll freeze. You'll be unable to keep the fire alive when dead...</p>
+      <p>
+        If you venture too far from the fire for too long you'll freeze. You'll
+        be unable to keep the fire alive when dead...
+      </p>
       <ul>
-        <li>WASD or ← → ↑ ↓ - move around</li>
+        <li>WASD or ← → ↑ ↓ or hjkl - move around</li>
         <li>E (repeatedly) - chop down trees</li>
         <li>SPACE - pick up logs / place them into fire</li>
       </ul>
-      <button id="start_button" disabled autofocus>Start!</button>
+      <button id="start_button" disabled autofocus>START</button>
     </div>
     <img id="spritesheet" style="display: none;" />
     <img id="tuustid" style="display: none;" />
