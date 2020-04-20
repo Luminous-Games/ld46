@@ -256,11 +256,16 @@ impl engine::World for SomeWorld {
                 None => (),
             }
         }
+        let conductivity = (timestamp - self.last_tick) as f32 / 1000.0;
         let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + 1000.0) / 1000.0).powi(2);
         self.game_objects.get_mut("thermometer").unwrap().rend[0]
             .downcast_mut::<Thermometer>()
             .unwrap()
-            .temperature = 1.0 / r2;
+            .temperature *= (1.0 - conductivity);
+        self.game_objects.get_mut("thermometer").unwrap().rend[0]
+            .downcast_mut::<Thermometer>()
+            .unwrap()
+            .temperature += 1.0 / r2 * conductivity;
 
         let mut player = self.game_objects.get_mut("player").unwrap();
         player.pos += speed * (timestamp - self.last_tick) as f32 * 0.05;
