@@ -317,7 +317,7 @@ impl SomeWorld {
     }
 
     fn get_direction(key_manager: &KeyManager) -> na::Vector2<f32> {
-        let mut direction = na::Vector2::zeros();
+        let mut direction = na::Vector2::<f32>::zeros();
         if key_manager.key_pressed(key_codes::W)
             || key_manager.key_pressed(key_codes::UP_ARROW)
             || key_manager.key_pressed(key_codes::K)
@@ -342,12 +342,17 @@ impl SomeWorld {
         {
             direction.x += -1.0;
         }
-        direction / direction.norm()
+        let norm = direction.norm();
+        if norm > 0.0 {
+            direction / norm
+        } else {
+            direction
+        }
     }
 
     fn cut_down_tree(
         spritesheet: &TextureMap,
-        mut stumps: &mut HashMap<String, GameObject>,
+        stumps: &mut HashMap<String, GameObject>,
         tree_name: &String,
         tree: &&mut GameObject,
     ) {
@@ -452,6 +457,7 @@ impl engine::World for SomeWorld {
             }
 
             let player_pos = player.pos.clone();
+            let mut last_player_hit: f32 = *player.props.get("last_hit").unwrap_or(&0.0);
             let mut stumps = HashMap::new();
             let mut inventory = self.game_objects.get_mut("inventory").unwrap().rend[0]
                 .downcast_mut::<Inventory>()
@@ -460,15 +466,14 @@ impl engine::World for SomeWorld {
             self.game_objects.retain(|key, game_object| {
                 if let Some(collider) = game_object.get_collider() {
                     if collider.collide(&game_object, &player_pos, &mut speed) {
-                        if key_manager.key_up(key_codes::E)
+                        if (timestamp - last_player_hit as f64) > 500.0
+                            && key_manager.key_up(key_codes::E)
                             && game_object.props.contains_key("tree")
                         {
-                            if game_object.props.contains_key("hitting_started")
-                                && timestamp
-                                    - *game_object.props.get("hitting_started").unwrap() as f64
-                                    > 5000.0
-                                && *game_object.props.get("hit_count").unwrap() + 1.0 >= 10.0
-                            {
+                            log::debug!("Whack!");
+                            last_player_hit = timestamp as f32;
+                            let hit_count = game_object.props.get("hit_count").unwrap_or(&0.0);
+                            if hit_count + 1.0 >= 10.0 {
                                 SomeWorld::cut_down_tree(
                                     &spritesheet,
                                     &mut stumps,
@@ -476,27 +481,21 @@ impl engine::World for SomeWorld {
                                     &game_object,
                                 );
                                 return false;
-                            } else if !game_object.props.contains_key("hitting_started") {
+                            } else {
                                 game_object
                                     .props
-                                    .insert("hitting_started".to_string(), timestamp as f32);
-                                game_object.props.insert("hit_count".to_string(), 1.0);
+                                    .insert("hit_count".to_string(), hit_count + 1.0);
                                 game_object.rend.clear();
                                 game_object.add_rend(Box::new(TexturedBox {
                                     size: na::Vector2::new(128.0, 128.0),
                                     texture: spritesheet.get_texture(2, 0),
                                 }));
-                            } else {
-                                game_object.props.insert(
-                                    "hit_count".to_string(),
-                                    *game_object.props.get("hit_count").unwrap() + 1.0,
-                                );
                             }
                         } else if key_manager.key_up(key_codes::SPACE)
                             && game_object.props.contains_key("log")
                             && inventory < 3
                         {
-                            // Picking up a log
+                            //         // Picking up a log
                             inventory += 1;
                             return false;
                         }
@@ -504,6 +503,26 @@ impl engine::World for SomeWorld {
                 }
                 true
             });
+            if !self
+                .game_objects
+                .get("player")
+                .unwrap()
+                .props
+                .contains_key("last_hit")
+            {
+                self.game_objects
+                    .get_mut("player")
+                    .unwrap()
+                    .props
+                    .insert("last_hit".to_string(), 0.0);
+            }
+            *self
+                .game_objects
+                .get_mut("player")
+                .unwrap()
+                .props
+                .get_mut("last_hit")
+                .unwrap() = last_player_hit;
 
             self.game_objects.extend(stumps);
             let fire = self.game_objects.get_mut("fire").unwrap();
@@ -533,7 +552,7 @@ impl engine::World for SomeWorld {
             let conductivity = (timestamp - self.last_tick) as f32 / 8000.0;
             let c = 800.0; // smaller number == sharper drop-off
             let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + c) / c).powi(2);
-            let mut player_temp = self.game_objects.get_mut("thermometer").unwrap().rend[0]
+            self.game_objects.get_mut("thermometer").unwrap().rend[0]
                 .downcast_mut::<Thermometer>()
                 .unwrap()
                 .temperature *= 1.0 - conductivity;
