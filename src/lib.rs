@@ -88,7 +88,7 @@ impl Rend for Thermometer {
                 self.texture_size.0 * self.temperature,
                 self.texture_size.1,
             ),
-            0.1,
+            -0.2,
         );
     }
 }
@@ -244,14 +244,11 @@ impl engine::World for SomeWorld {
                 None => (),
             }
         }
-
+        let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + 1000.0) / 1000.0).powi(2);
         self.game_objects.get_mut("thermometer").unwrap().rend[0]
             .downcast_mut::<Thermometer>()
             .unwrap()
-            .temperature = f32::min(
-            1.0,
-            f32::max(0.0, 1.0 - ((player.pos - fire.pos).norm() - 48.0) / 200.0),
-        );
+            .temperature = 1.0 / r2;
 
         let mut player = self.game_objects.get_mut("player").unwrap();
         player.pos += speed * (timestamp - self.last_tick) as f32 * 0.05;
