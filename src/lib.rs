@@ -64,7 +64,7 @@ impl Thermometer {
 
 impl Rend for Thermometer {
     fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
-        renderer.draw_quad(
+        renderer.draw_quad_with_depth(
             game_object.pos,
             self.size,
             &self.texture_map.get_texture_custom(
@@ -73,12 +73,13 @@ impl Rend for Thermometer {
                 self.texture_size.0,
                 self.texture_size.1,
             ),
+            -0.1,
         );
         let mut filling_size = self.size.clone_owned();
         filling_size.x *= self.temperature;
         let mut filling_pos = game_object.pos.clone();
         filling_pos.x -= self.size.x * 0.5 * (1.0 - self.temperature);
-        renderer.draw_quad(
+        renderer.draw_quad_with_depth(
             filling_pos,
             filling_size,
             &self.texture_map.get_texture_custom(
@@ -87,6 +88,7 @@ impl Rend for Thermometer {
                 self.texture_size.0 * self.temperature,
                 self.texture_size.1,
             ),
+            0.1,
         );
     }
 }
@@ -116,7 +118,7 @@ impl SomeWorld {
             texture: spritesheet.get_texture(1, 0),
         }));
         player.add_rend(Box::new(Cam {}));
-        let mut fire = GameObject::new(na::Point2::new(300.0, 300.0));
+        let mut fire = GameObject::new(na::Point2::new(300.0, 280.0));
         fire.add_collider(Collider::new(32.0));
         fire.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(64.0, 64.0),

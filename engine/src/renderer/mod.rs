@@ -151,6 +151,16 @@ impl Renderer {
     }
 
     pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
+        self.draw_quad_with_depth(pos, size, texture, -pos.y);
+    }
+
+    pub fn draw_quad_with_depth(
+        &mut self,
+        pos: na::Point2<f32>,
+        size: na::Vector2<f32>,
+        texture: &Texture,
+        depth: f32,
+    ) {
         if !self.vertices.contains_key(&texture.texture_name) {
             self.vertices.insert(
                 texture.texture_name.to_owned(),
@@ -161,7 +171,7 @@ impl Renderer {
 
         vertices.push(pos.x - size.x / 2.0);
         vertices.push(pos.y);
-        vertices.push(-pos.y); //depth
+        vertices.push(depth);
         vertices.push(1.0);
         vertices.push(1.0);
         vertices.push(1.0);
@@ -170,7 +180,7 @@ impl Renderer {
 
         vertices.push(pos.x + size.x / 2.0);
         vertices.push(pos.y);
-        vertices.push(-pos.y); //depth
+        vertices.push(depth);
         vertices.push(1.0);
         vertices.push(1.0);
         vertices.push(1.0);
@@ -179,7 +189,7 @@ impl Renderer {
 
         vertices.push(pos.x - size.x / 2.0);
         vertices.push(pos.y + size.y);
-        vertices.push(-pos.y); //depth
+        vertices.push(depth);
         vertices.push(1.0);
         vertices.push(1.0);
         vertices.push(1.0);
@@ -188,7 +198,7 @@ impl Renderer {
 
         vertices.push(pos.x + size.x / 2.0);
         vertices.push(pos.y + size.y);
-        vertices.push(-pos.y); //depth
+        vertices.push(depth);
         vertices.push(1.0);
         vertices.push(1.0);
         vertices.push(1.0);
@@ -302,13 +312,16 @@ impl Renderer {
         } else {
             na::Translation3::new(-self.camera.x, -self.camera.y, self.camera.y)
         };
+
+        let viewport = na::Vector2::new(1600.0, 1600.0 * self.viewport.y / self.viewport.x);
+
         let orthographic_view = na::Orthographic3::new(
-            -self.viewport.x / 2.0,
-            self.viewport.x / 2.0,
-            -self.viewport.y / 2.0,
-            self.viewport.y / 2.0,
-            -self.viewport.y * 2.0,
-            self.viewport.y * 2.0,
+            -viewport.x / 2.0,
+            viewport.x / 2.0,
+            -viewport.y / 2.0,
+            viewport.y / 2.0,
+            -viewport.y * 2.0,
+            viewport.y * 2.0,
         );
 
         self.gl.uniform_matrix4fv_with_f32_array(
