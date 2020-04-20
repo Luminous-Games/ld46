@@ -210,7 +210,7 @@ impl Rend for Fire {
                 game_object.pos.x + particle.pos.x,
                 game_object.pos.y + particle.pos.y,
             );
-            let size = heat.sqrt() * 128.0;
+            let size = ((heat - 0.25) / 0.75).sqrt() * 128.0;
             renderer.draw_quad_with_depth(
                 render_pos,
                 na::Vector2::new(size, size),
@@ -382,14 +382,58 @@ impl engine::World for SomeWorld {
         let spritesheet = TextureMap::new(4, 4, "spritesheet".to_string());
         let direction = SomeWorld::get_direction(key_manager);
 
+        let player_dead = !self.game_objects.contains_key("player");
+
+        let fire_pos = self.game_objects.get("fire").unwrap().pos;
+        match self.game_objects.get_mut("deathwatch") {
+            Some(death_watch) => {
+                if (na::distance(&death_watch.pos, &fire_pos)) > 1.0 {
+                    death_watch.pos = na::Point2::new(
+                        fire_pos.x * 0.2 + death_watch.pos.x * 0.8,
+                        fire_pos.y * 0.2 + death_watch.pos.y * 0.8,
+                    );
+                }
+            }
+            None => (),
+        }
+
         {
             let fire = self.game_objects.get_mut("fire").unwrap();
             let mut heat = *fire.props.get("heat").unwrap();
-            heat *= 1.0 - (timestamp - self.last_tick) as f32 / 100000.0;
+            if heat < 0.25 && !player_dead {
+                if !self.game_objects.contains_key("deathwatch") {
+                    let window = web_sys::window().unwrap();
+                    window
+                        .alert_with_message(
+                            "You let your fire die out and are now doomed to die as well.",
+                        )
+                        .unwrap();
+
+                    let player_pos = self.game_objects.get("player").unwrap().pos;
+                    let mut death_watch = GameObject::new(player_pos);
+                    death_watch.add_rend(Box::new(Cam {}));
+                    self.game_objects
+                        .insert("deathwatch".to_string(), death_watch);
+                }
+                return;
+            }
+            let mut mul = 100000.0;
+            if player_dead {
+                mul = 10000.0;
+            }
+            heat *= 1.0 - (timestamp - self.last_tick) as f32 / mul;
             *fire.props.get_mut("heat").unwrap() = heat;
+
+            // log::debug!("{:?}", fire.props);
+
+            let fire = self.game_objects.get_mut("fire").unwrap();
+            fire.rend[0] = Box::new(TexturedBox {
+                size: na::Vector2::new(80.0, 80.0),
+                texture: spritesheet.get_texture((heat * 4.0 - 1.0) as i32, 1),
+            });
         }
 
-        if (self.game_objects.contains_key("player")) {
+        if self.game_objects.contains_key("player") {
             let player = self.game_objects.get("player").unwrap();
 
             let mut speed = player.speed.clone();
@@ -476,15 +520,6 @@ impl engine::World for SomeWorld {
             }
             heat *= 1.0 - (timestamp - self.last_tick) as f32 / 100000.0;
             *fire.props.get_mut("heat").unwrap() = heat;
-            log::debug!("{:?}", fire.props);
-            let fire = self.game_objects.get_mut("fire").unwrap();
-            if heat < 0.25 {
-                panic!("DEAD");
-            }
-            fire.rend[0] = Box::new(TexturedBox {
-                size: na::Vector2::new(80.0, 80.0),
-                texture: spritesheet.get_texture((heat * 4.0 - 1.0) as i32, 1),
-            });
             self.game_objects.get_mut("inventory").unwrap().rend[0]
                 .downcast_mut::<Inventory>()
                 .unwrap()
@@ -521,23 +556,15 @@ impl engine::World for SomeWorld {
             if player_temp < 0.25 {
                 let mut death_watch = GameObject::new(player_pos);
                 death_watch.add_rend(Box::new(Cam {}));
+                let window = web_sys::window().unwrap();
+                window.alert_with_message(
+                    "You let yourself underheat and were vanquished by the cold, leaving your fire to decay to a smoulder."
+                ).unwrap();
                 self.game_objects
                     .insert("deathwatch".to_string(), death_watch);
                 self.game_objects.remove("player");
                 self.game_objects.remove("thermometer");
             }
-        }
-        let fire_pos = self.game_objects.get("fire").unwrap().pos;
-        match self.game_objects.get_mut("deathwatch") {
-            Some(death_watch) => {
-                if (na::distance(&death_watch.pos, &fire_pos)) > 1.0 {
-                    death_watch.pos = na::Point2::new(
-                        fire_pos.x * 0.2 + death_watch.pos.x * 0.8,
-                        fire_pos.y * 0.2 + death_watch.pos.y * 0.8,
-                    );
-                }
-            }
-            None => (),
         }
         self.last_tick = timestamp;
     }
