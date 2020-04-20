@@ -342,7 +342,7 @@ impl SomeWorld {
         {
             direction.x += -1.0;
         }
-        direction
+        direction / direction.norm()
     }
 
     fn cut_down_tree(
@@ -439,8 +439,8 @@ impl engine::World for SomeWorld {
             let mut speed = player.speed.clone();
             speed += direction * ((timestamp - self.last_tick) as f32 * 0.1);
 
-            let div = (timestamp - self.last_tick) / 100.0;
-            speed *= 0.01f32.powf(div as f32);
+            let div = (timestamp - self.last_tick) / 200.0;
+            speed *= 0.1f32.powf(div as f32);
 
             let norm = speed.norm();
             if norm > 10.0 {

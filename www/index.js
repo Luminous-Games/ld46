@@ -41,13 +41,14 @@ function startGame() {
   canvas.style.display = "block";
   const tutorial = document.getElementById("tutorial");
   tutorial.style.display = "none";
-  const mute = document.createElement("button")
+  const mute = document.createElement("button");
   mute.style.position = "fixed";
   mute.style.top = "0";
   mute.style.right = "0";
-  mute.onclick = function(){
+  mute.onclick = function () {
     audio.muted = !audio.muted;
-  }
+    mute.text = audio.muted ? "Unmute" : "Mute";
+  };
   mute.textContent = "Mute";
   document.body.appendChild(mute);
 
