@@ -1,10 +1,19 @@
 #[cfg(debug_assertions)]
 extern crate console_error_panic_hook;
 extern crate nalgebra as na;
+extern crate poisson;
+extern crate rand;
 extern crate wee_alloc;
 
 use std::collections::HashMap;
+use std::convert::TryInto;
 
+use na::{Point2, Vector2};
+use noise::{NoiseFn, Perlin, Seedable};
+use poisson::{algorithm, Builder, Type};
+use rand::distributions::Normal;
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
 use wasm_bindgen::prelude::*;
 
 use engine::key::{key_codes, KeyManager};
@@ -90,13 +99,15 @@ impl Rend for Cam {
     }
 }
 
-struct SomeWorld<'a> {
-    game_objects: HashMap<&'a str, GameObject>,
+struct SomeWorld {
+    game_objects: HashMap<String, GameObject>,
     last_tick: f64,
 }
 
-impl<'a> SomeWorld<'a> {
-    fn new() -> SomeWorld<'a> {
+const WORLD_EDGE: f64 = 10000.0;
+
+impl SomeWorld {
+    fn new() -> SomeWorld {
         let spritesheet = engine::renderer::TextureMap::new(4, 1, "spritesheet".to_string());
 
         let mut player = GameObject::new(na::Point2::new(0.0, 0.0));
@@ -111,12 +122,6 @@ impl<'a> SomeWorld<'a> {
             size: na::Vector2::new(64.0, 64.0),
             texture: spritesheet.get_texture(0, 0),
         }));
-        let mut tree = GameObject::new(na::Point2::new(400.9, 100.0));
-        tree.add_collider(Collider::new(16.0));
-        tree.add_rend(Box::new(TexturedBox {
-            size: na::Vector2::new(128.0, 128.0),
-            texture: spritesheet.get_texture(1, 0),
-        }));
 
         let mut thermometer = GameObject::new(na::Point2::new(100.0, 50.0));
         thermometer.add_rend(Box::new(Thermometer::new(
@@ -127,10 +132,42 @@ impl<'a> SomeWorld<'a> {
         )));
 
         let mut game_objects = HashMap::new();
-        game_objects.insert("player", player);
-        game_objects.insert("fire", fire);
-        game_objects.insert("tree", tree);
-        game_objects.insert("thermometer", thermometer);
+        game_objects.insert("player".to_string(), player);
+        game_objects.insert("fire".to_string(), fire);
+        game_objects.insert("thermometer".to_string(), thermometer);
+
+        // let perlin = Perlin::new().set_seed(2);
+        const TREE_COLLISION_RANGE: f32 = 16.0;
+        // const PERLIN_SCALER: f64 = 20.0; // smaller number = bigger features
+        // let mut treshold = SmallRng::seed_from_u64(0);
+        let mut tree_i = 0;
+        // for sample in Builder::<_, na::Vector2<f64>>::with_radius(
+        //     TREE_COLLISION_RANGE as f64 * 2.0 / WORLD_EDGE,
+        //     Type::Normal,
+        // )
+        // .build(SmallRng::seed_from_u64(0), algorithm::Bridson)
+        // .generate()
+        // {
+        //     let perlin_coords: [f64; 2] =
+        //         (*(&sample * PERLIN_SCALER).as_slice()).try_into().unwrap();
+        //     // if (perlin.get(perlin_coords)) > treshold.gen_range(0.0, 1.5) {
+        //     if (perlin.get(perlin_coords)) > treshold.sample(Normal::new(0.0, 0.5)) {
+        // let world_coords = (&sample - Vector2::new(0.5, 0.5)) * WORLD_EDGE;
+        // log::debug!("{:?}", world_coords);
+        for (x, y) in trees::TREES.iter() {
+            let mut tree =
+                // GameObject::new(Point2::new(world_coords.x as f32, world_coords.y as f32));
+                GameObject::new(Point2::new(*x, *y));
+            tree.add_collider(Collider::new(TREE_COLLISION_RANGE));
+            tree.add_rend(Box::new(TexturedBox {
+                size: na::Vector2::new(128.0, 128.0),
+                texture: spritesheet.get_texture(1, 0),
+            }));
+            game_objects.insert(format!("tree{}", tree_i), tree);
+            tree_i += 1;
+        }
+        // }
+        log::debug!("Got trees: {}", tree_i);
         SomeWorld {
             game_objects,
             last_tick: 0.0,
@@ -156,7 +193,7 @@ impl<'a> SomeWorld<'a> {
     }
 }
 
-impl<'a> engine::World for SomeWorld<'a> {
+impl engine::World for SomeWorld {
     fn tick(&mut self, key_manager: &KeyManager, timestamp: f64) {
         let direction = SomeWorld::get_direction(key_manager);
 
@@ -174,7 +211,7 @@ impl<'a> engine::World for SomeWorld<'a> {
         for game_object in self.game_objects.values() {
             let collider = game_object.get_collider();
             match collider {
-                Some(collider) => speed = collider.collide(&game_object, &player.pos, &speed),
+                Some(collider) => collider.collide(&game_object, &player.pos, &mut speed),
                 None => (),
             }
         }
@@ -206,3 +243,5 @@ pub fn run() {
     log::info!("Game starting");
     engine::start(Box::new(SomeWorld::new()) as Box<dyn World>).unwrap();
 }
+
+mod trees;

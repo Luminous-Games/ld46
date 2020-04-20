@@ -6,8 +6,8 @@ use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlTexture};
 
 const FLOAT32_BYTES: i32 = 4;
 
-const MAX_QUADS: usize = 10000;
-// const MAX_VERTICES: usize = MAX_QUADS * 4;
+const MAX_QUADS: usize = 11000;
+const MAX_VERTICES: usize = MAX_QUADS * 4;
 const MAX_INDICES: usize = MAX_QUADS * 6;
 const VERTEX_SIZE: usize = 8;
 
@@ -33,11 +33,11 @@ impl TextureMap {
         let width = 1f32 / self.tiles_x as f32;
         let height = 1f32 / self.tiles_y as f32;
 
-        return Texture {
+        Texture {
             start: na::Vector2::new(width * column as f32, height * row as f32),
             size: na::Vector2::new(width, height),
             texture_name: self.texture_name.to_owned(),
-        };
+        }
     }
 
     pub fn get_texture_custom(&self, column: f32, row: f32, w: f32, h: f32) -> Texture {
@@ -153,7 +153,7 @@ impl Renderer {
     pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
         if !self.vertices.contains_key(&texture.texture_name) {
             self.vertices
-                .insert(texture.texture_name.to_owned(), vec![]);
+                .insert(texture.texture_name.to_owned(), Vec::with_capacity(MAX_VERTICES * VERTEX_SIZE));
         }
         let vertices = self.vertices.get_mut(&texture.texture_name).unwrap();
 

@@ -5,13 +5,15 @@ extern crate nalgebra as na;
 extern crate num_derive;
 extern crate wee_alloc;
 
-use downcast_rs::Downcast;
-use renderer::Renderer;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+use downcast_rs::Downcast;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext;
+
+use renderer::Renderer;
 
 pub mod key;
 pub mod mouse;
@@ -76,9 +78,13 @@ impl Collider {
         &self,
         game_object: &GameObject,
         pos: &na::Point2<f32>,
-        speed: &na::Vector2<f32>,
-    ) -> na::Vector2<f32> {
-        let mut speed = speed.clone_owned();
+        speed: &mut na::Vector2<f32>,
+    ) {
+        if f32::abs(game_object.pos.x - pos.x) > (self.get_range() + 16.0)
+            || f32::abs(game_object.pos.y - pos.y) > (self.get_range() + 16.0)
+        {
+            return;
+        }
         if na::distance_squared(&game_object.pos, pos) < (self.get_range() + 16.0).powi(2) {
             if pos.x > game_object.pos.x {
                 speed.x = f32::max(0.0, speed.x);
@@ -91,7 +97,6 @@ impl Collider {
                 speed.y = f32::min(0.0, speed.y);
             }
         };
-        speed
     }
 }
 
