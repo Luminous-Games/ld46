@@ -417,11 +417,11 @@ impl engine::World for SomeWorld {
                 }
                 return;
             }
-            let mut mul = 100000.0;
+            let mut mul = 0.5;
             if player_dead {
-                mul = 10000.0;
+                mul = 0.1;
             }
-            heat *= 1.0 - (timestamp - self.last_tick) as f32 / mul;
+            heat *= 1.0 - (timestamp - self.last_tick) as f32 / (100000.0 * mul);
             *fire.props.get_mut("heat").unwrap() = heat;
 
             // log::debug!("{:?}", fire.props);
@@ -438,13 +438,16 @@ impl engine::World for SomeWorld {
 
             let mut speed = player.speed.clone();
             speed += direction * ((timestamp - self.last_tick) as f32 * 0.1);
+
+            let div = (timestamp - self.last_tick) / 100.0;
+            speed *= 0.01f32.powf(div as f32);
+
             let norm = speed.norm();
             if norm > 10.0 {
                 speed *= 10.0 / norm;
             }
-            speed *= 0.7;
 
-            if norm * 0.8 < 1.0 {
+            if norm < 1.0 {
                 speed *= 0.0;
             }
 
