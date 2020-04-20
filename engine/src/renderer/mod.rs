@@ -147,10 +147,19 @@ impl Renderer {
     }
 
     pub fn set_camera(&mut self, camera: na::Point2<f32>) {
-        self.camera = camera;
+        self.camera = na::Point2::new(camera.x.round(), camera.y.round());
     }
 
     pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
+        self.draw_quad_with_depth(pos, size, texture, -pos.y)
+    }
+    pub fn draw_quad_with_depth(
+        &mut self,
+        pos: na::Point2<f32>,
+        size: na::Vector2<f32>,
+        texture: &Texture,
+        depth: f32,
+    ) {
         if !self.vertices.contains_key(&texture.texture_name) {
             self.vertices.insert(
                 texture.texture_name.to_owned(),
@@ -161,7 +170,7 @@ impl Renderer {
 
         vertices.push(pos.x - size.x / 2.0);
         vertices.push(pos.y);
-        vertices.push(-pos.y); //depth
+        vertices.push(depth);
         vertices.push(1.0);
         vertices.push(1.0);
         vertices.push(1.0);
@@ -170,7 +179,7 @@ impl Renderer {
 
         vertices.push(pos.x + size.x / 2.0);
         vertices.push(pos.y);
-        vertices.push(-pos.y); //depth
+        vertices.push(depth);
         vertices.push(1.0);
         vertices.push(1.0);
         vertices.push(1.0);
@@ -179,7 +188,7 @@ impl Renderer {
 
         vertices.push(pos.x - size.x / 2.0);
         vertices.push(pos.y + size.y);
-        vertices.push(-pos.y); //depth
+        vertices.push(depth);
         vertices.push(1.0);
         vertices.push(1.0);
         vertices.push(1.0);
@@ -188,7 +197,7 @@ impl Renderer {
 
         vertices.push(pos.x + size.x / 2.0);
         vertices.push(pos.y + size.y);
-        vertices.push(-pos.y); //depth
+        vertices.push(depth);
         vertices.push(1.0);
         vertices.push(1.0);
         vertices.push(1.0);
@@ -300,15 +309,29 @@ impl Renderer {
         let camera_pos_transform = if ui {
             na::Translation3::new(0.0, 0.0, 0.0)
         } else {
-            na::Translation3::new(-self.camera.x, -self.camera.y, self.camera.y)
+            na::Translation3::new(
+                -self.camera.x,
+                -self.camera.y,
+                self.camera.y - self.viewport.y * 2.0,
+            )
         };
         let orthographic_view = na::Orthographic3::new(
             -self.viewport.x / 2.0,
             self.viewport.x / 2.0,
             -self.viewport.y / 2.0,
             self.viewport.y / 2.0,
-            -self.viewport.y * 2.0,
-            self.viewport.y * 2.0,
+            0.1,
+            self.viewport.y * 4.0,
+        );
+        let trans_point = camera_pos_transform
+            .to_homogeneous()
+            .transform_point(&na::Point3::new(0.0, 0.0, 0.0));
+        log::debug!(
+            "{:?} {:?}",
+            trans_point,
+            orthographic_view
+                .to_homogeneous()
+                .transform_point(&trans_point)
         );
 
         self.gl.uniform_matrix4fv_with_f32_array(

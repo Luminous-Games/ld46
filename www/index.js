@@ -17,6 +17,8 @@ function resize(canvas) {
   // }
   canvas.width = w;
   canvas.height = h;
+  canvas.width = 2048;
+  canvas.height = 2048;
 }
 
 const canvas = document.createElement("canvas");
@@ -47,4 +49,3 @@ img2.onload = loadify;
 const img3 = document.getElementById("ui");
 img3.src = ui;
 img3.onload = loadify;
-

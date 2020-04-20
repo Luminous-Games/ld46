@@ -5,20 +5,18 @@ extern crate poisson;
 extern crate rand;
 extern crate wee_alloc;
 
-use std::collections::HashMap;
-use std::convert::TryInto;
-
+use engine::key::{key_codes, KeyManager};
+use engine::renderer::{Renderer, TextureMap};
+use engine::{Collider, GameObject, Rend, World};
 use na::{Point2, Vector2};
 use noise::{NoiseFn, Perlin, Seedable};
 use poisson::{algorithm, Builder, Type};
 use rand::distributions::Normal;
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
+use std::collections::HashMap;
+use std::convert::TryInto;
 use wasm_bindgen::prelude::*;
-
-use engine::key::{key_codes, KeyManager};
-use engine::renderer::{Renderer, TextureMap};
-use engine::{Collider, GameObject, Rend, World};
 
 // Use `wee_alloc` as the global allocator.
 #[global_allocator]
@@ -104,11 +102,11 @@ struct SomeWorld {
     last_tick: f64,
 }
 
-const WORLD_EDGE: f64 = 10000.0;
+const WORLD_EDGE: f64 = 2048.0;
 
 impl SomeWorld {
     fn new() -> SomeWorld {
-        let spritesheet = engine::renderer::TextureMap::new(4, 1, "spritesheet".to_string());
+        let spritesheet = engine::renderer::TextureMap::new(8, 8, "tuustid".to_string());
 
         let mut player = GameObject::new(na::Point2::new(0.0, 0.0));
         player.add_rend(Box::new(TexturedBox {
@@ -132,42 +130,50 @@ impl SomeWorld {
         )));
 
         let mut game_objects = HashMap::new();
-        game_objects.insert("player".to_string(), player);
-        game_objects.insert("fire".to_string(), fire);
-        game_objects.insert("thermometer".to_string(), thermometer);
+        // game_objects.insert("player".to_string(), player);
+        // game_objects.insert("fire".to_string(), fire);
+        // game_objects.insert("thermometer".to_string(), thermometer);
 
-        // let perlin = Perlin::new().set_seed(2);
-        const TREE_COLLISION_RANGE: f32 = 16.0;
-        // const PERLIN_SCALER: f64 = 20.0; // smaller number = bigger features
-        // let mut treshold = SmallRng::seed_from_u64(0);
         let mut tree_i = 0;
-        // for sample in Builder::<_, na::Vector2<f64>>::with_radius(
-        //     TREE_COLLISION_RANGE as f64 * 2.0 / WORLD_EDGE,
-        //     Type::Normal,
-        // )
-        // .build(SmallRng::seed_from_u64(0), algorithm::Bridson)
-        // .generate()
-        // {
-        //     let perlin_coords: [f64; 2] =
-        //         (*(&sample * PERLIN_SCALER).as_slice()).try_into().unwrap();
-        //     // if (perlin.get(perlin_coords)) > treshold.gen_range(0.0, 1.5) {
-        //     if (perlin.get(perlin_coords)) > treshold.sample(Normal::new(0.0, 0.5)) {
-        // let world_coords = (&sample - Vector2::new(0.5, 0.5)) * WORLD_EDGE;
-        // log::debug!("{:?}", world_coords);
-        for (x, y) in trees::TREES.iter() {
-            let mut tree =
-                // GameObject::new(Point2::new(world_coords.x as f32, world_coords.y as f32));
-                GameObject::new(Point2::new(*x, *y));
-            tree.add_collider(Collider::new(TREE_COLLISION_RANGE));
-            tree.add_rend(Box::new(TexturedBox {
-                size: na::Vector2::new(128.0, 128.0),
-                texture: spritesheet.get_texture(1, 0),
-            }));
-            game_objects.insert(format!("tree{}", tree_i), tree);
-            tree_i += 1;
+        let perlin = Perlin::new().set_seed(2);
+        const PERLIN_SCALER: f64 = 20.0; // smaller number = bigger features
+        let mut treshold = SmallRng::seed_from_u64(2);
+        for sample in
+            Builder::<_, na::Vector2<f64>>::with_radius(12.0 * 2.0 / WORLD_EDGE, Type::Normal)
+                .build(SmallRng::seed_from_u64(0), algorithm::Bridson)
+                .generate()
+        {
+            let perlin_coords: [f64; 2] =
+                (*(&sample * PERLIN_SCALER).as_slice()).try_into().unwrap();
+            // if (perlin.get(perlin_coords)) > treshold.gen_range(0.0, 1.5) {
+            if (perlin.get(perlin_coords)) > treshold.sample(Normal::new(-0.1, 0.5)) {
+                let world_coords = (&sample - Vector2::new(0.5, 0.5)) * WORLD_EDGE;
+                if world_coords.x < -WORLD_EDGE / 2.0 + 32.0
+                    || world_coords.x > WORLD_EDGE / 2.0 - 32.0
+                    || world_coords.y < -WORLD_EDGE / 2.0 + 32.0
+                    || world_coords.y > WORLD_EDGE / 2.0 - 32.0
+                {
+                    continue;
+                }
+                log::debug!("{:?}", world_coords);
+                let mut tree =
+                    GameObject::new(Point2::new(world_coords.x as f32, world_coords.y as f32));
+                // GameObject::new(Point2::new());
+                tree.add_rend(Box::new(TexturedBox {
+                    size: na::Vector2::new(64.0, 64.0),
+                    texture: spritesheet.get_texture(
+                        (treshold.gen_range(0.0, 4.0) as f32).floor() as i32,
+                        (treshold.gen_range(0.0, 6.0) as f32).floor() as i32,
+                    ),
+                }));
+                game_objects.insert(format!("tuust{}", tree_i), tree);
+                tree_i += 1;
+            }
         }
-        // }
-        log::debug!("Got trees: {}", tree_i);
+        // const TREE_COLLISION_RANGE: f32 = 16.0;
+        // for (x, y) in trees::TREES.iter() {
+        // // }
+        log::debug!("Got tuusts: {}", tree_i);
         SomeWorld {
             game_objects,
             last_tick: 0.0,
@@ -195,6 +201,7 @@ impl SomeWorld {
 
 impl engine::World for SomeWorld {
     fn tick(&mut self, key_manager: &KeyManager, timestamp: f64) {
+        return ();
         let direction = SomeWorld::get_direction(key_manager);
 
         let player = self.game_objects.get("player").unwrap();
@@ -207,6 +214,10 @@ impl engine::World for SomeWorld {
             speed *= 10.0 / norm;
         }
         speed *= 0.8;
+
+        if norm * 0.8 < 1.0 {
+            speed *= 0.0;
+        }
 
         for game_object in self.game_objects.values() {
             let collider = game_object.get_collider();
@@ -243,5 +254,3 @@ pub fn run() {
     log::info!("Game starting");
     engine::start(Box::new(SomeWorld::new()) as Box<dyn World>).unwrap();
 }
-
-mod trees;
