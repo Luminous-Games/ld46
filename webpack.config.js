@@ -32,7 +32,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.png$/,
+        test: /\.(png|m4a)$/,
         use: [
           {
             loader: "url-loader",

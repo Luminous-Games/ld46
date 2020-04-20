@@ -19,15 +19,25 @@
 
       canvas#canvas {
         margin: auto;
+        background: green;
         display: block;
       }
     </style>
   </head>
   <body>
-    <noscript
-      >This page contains webassembly and javascript content, please enable
-      javascript in your browser.</noscript
-    >
+    <noscript>This page contains webassembly and javascript content, please enable
+      javascript in your browser.</noscript>
+    <div id="tutorial">
+      <h1>Hello!</h1>
+      <p>Keep the fire alive!</p>
+      <p>If you venture too far from the fire for too long you'll freeze. You'll be unable to keep the fire alive when dead...</p>
+      <ul>
+        <li>WASD or ← → ↑ ↓ - move around</li>
+        <li>E (repeatedly) - chop down trees</li>
+        <li>SPACE - pick up logs / place them into fire</li>
+      </ul>
+      <button id="start_button" disabled autofocus>Start!</button>
+    </div>
     <img id="spritesheet" style="display: none;" />
     <img id="tuustid" style="display: none;" />
     <img id="grass" style="display: none;" />

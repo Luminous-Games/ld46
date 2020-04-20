@@ -2,6 +2,7 @@ import spritesheet from "./images/spritesheet.png";
 import tuustid from "./images/tuustid.png";
 import ui from "./images/ui.png";
 import grass from "./images/tuustimaa.png";
+import ludum46 from "./music/ludum46.m4a";
 import * as game from "luminous_ld46";
 
 // const aspect = 16 / 8;
@@ -23,7 +24,7 @@ function resize(canvas) {
 const canvas = document.createElement("canvas");
 resize(canvas);
 canvas.id = "canvas";
-canvas.style.background = "red";
+canvas.style.display = "none";
 document.body.appendChild(canvas);
 
 window.addEventListener("resize", function (event) {
@@ -31,11 +32,36 @@ window.addEventListener("resize", function (event) {
   resize(canvas);
 });
 
+function startGame() {
+  const audio = new Audio(ludum46);
+  audio.loop = true;
+  audio.volume = 0.2;
+  audio.play();
+  const canvas = document.getElementById("canvas");
+  canvas.style.display = "block";
+  const tutorial = document.getElementById("tutorial");
+  tutorial.style.display = "none";
+  const mute = document.createElement("button")
+  mute.style.position = "fixed";
+  mute.style.top = "0";
+  mute.style.right = "0";
+  mute.onclick = function(){
+    audio.muted = !audio.muted;
+  }
+  mute.textContent = "Mute";
+  document.body.appendChild(mute);
+
+  game.run();
+}
+
+const startButton = document.getElementById("start_button");
+
 let loadCount = 0;
 let loadify = () => {
   ++loadCount;
   if (loadCount === 4) {
-    game.run();
+    startButton.onclick = startGame;
+    startButton.disabled = false;
   }
 };
 
