@@ -471,6 +471,7 @@ impl engine::World for SomeWorld {
                             && game_object.props.contains_key("tree")
                         {
                             log::debug!("Whack!");
+                            dfhh();
                             last_player_hit = timestamp as f32;
                             let hit_count = game_object.props.get("hit_count").unwrap_or(&0.0);
                             if hit_count + 1.0 >= 10.0 {
@@ -586,6 +587,7 @@ impl engine::World for SomeWorld {
                     .insert("deathwatch".to_string(), death_watch);
                 self.game_objects.remove("player");
                 self.game_objects.remove("thermometer");
+                self.game_objects.remove("inventory");
             }
         }
         self.last_tick = timestamp;
@@ -599,6 +601,7 @@ impl engine::World for SomeWorld {
 #[wasm_bindgen(module = "/www/def.js")]
 extern "C" {
     fn set_volume(v: f32);
+    fn dfhh();
 }
 
 #[wasm_bindgen]
@@ -606,7 +609,7 @@ pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
     wasm_logger::init(wasm_logger::Config::default());
-    set_volume(0.0);
+    // set_volume(0.0);
     log::info!("Game starting");
     engine::start(Box::new(SomeWorld::new()) as Box<dyn World>).unwrap();
 }

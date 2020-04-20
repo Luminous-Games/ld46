@@ -35,7 +35,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(png|m4a)$/,
+        test: /\.(png|m4a|mp3)$/,
         use: [
           {
             loader: "url-loader",

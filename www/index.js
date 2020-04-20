@@ -4,6 +4,7 @@ import ui from "./images/ui.png";
 import grass from "./images/tuustimaa.png";
 import character from "./images/character.png";
 import ludum46 from "./music/ludum46.m4a";
+import dfhh from "./music/dfhh.mp3";
 import * as game from "luminous_ld46";
 
 // const aspect = 16 / 8;
@@ -39,6 +40,12 @@ function startGame() {
   audio.loop = true;
   audio.volume = 0.2;
   audio.play();
+
+  const audio2 = new Audio(dfhh);
+  window.audio2 = audio2;
+  audio2.loop = false;
+  audio2.volume = 0.2;
+
   const canvas = document.getElementById("canvas");
   canvas.style.display = "block";
   const tutorial = document.getElementById("tutorial");
@@ -49,6 +56,7 @@ function startGame() {
   mute.style.right = "0";
   mute.onclick = function () {
     audio.muted = !audio.muted;
+    audio2.muted = !audio2.muted;
     mute.textContent = audio.muted ? "Unmute" : "Mute";
   };
   mute.textContent = "Mute";
