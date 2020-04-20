@@ -172,11 +172,19 @@ impl Rend for Cam {
     }
 }
 
-struct Fire {}
+struct Fire {
+    heat: f32,
+}
+
+impl Fire {
+    fn new() -> Fire {
+        Fire { heat: 1.0 }
+    }
+}
 
 impl Rend for Fire {
     fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
-        renderer.set_fire_heat(1.0);
+        renderer.set_fire_heat(self.heat);
         renderer.set_fire_pos(game_object.pos);
     }
 }
@@ -199,12 +207,12 @@ impl SomeWorld {
         }));
         player.add_rend(Box::new(Cam {}));
         let mut fire = GameObject::new(na::Point2::new(300.0, 280.0));
-        fire.add_collider(Collider::new(32.0));
+        fire.add_collider(Collider::new(40.0));
         fire.add_rend(Box::new(TexturedBox {
-            size: na::Vector2::new(64.0, 64.0),
+            size: na::Vector2::new(80.0, 80.0),
             texture: spritesheet.get_texture(2, 0),
         }));
-        fire.add_rend(Box::new(Fire {}));
+        fire.add_rend(Box::new(Fire::new()));
 
         let mut thermometer = GameObject::new(na::Point2::new(0.0, 150.0));
         thermometer.add_rend(Box::new(Thermometer::new(
@@ -307,6 +315,7 @@ impl SomeWorld {
 
 impl engine::World for SomeWorld {
     fn tick(&mut self, key_manager: &KeyManager, timestamp: f64) {
+        let spritesheet = TextureMap::new(4, 4, "spritesheet".to_string());
         let direction = SomeWorld::get_direction(key_manager);
 
         let player = self.game_objects.get("player").unwrap();
@@ -337,8 +346,7 @@ impl engine::World for SomeWorld {
                         let mut stump = GameObject::new(game_object.pos.clone());
                         stump.add_rend(Box::new(TexturedBox {
                             size: na::Vector2::new(128.0, 128.0),
-                            texture: TextureMap::new(4, 4, "spritesheet".to_string())
-                                .get_texture(3, 0),
+                            texture: spritesheet.get_texture(3, 0),
                         }));
                         stump
                             .props
@@ -348,8 +356,7 @@ impl engine::World for SomeWorld {
                         log.add_collider(Collider::new(10.0));
                         log.add_rend(Box::new(TexturedBox {
                             size: na::Vector2::new(64.0, 64.0),
-                            texture: TextureMap::new(4, 4, "spritesheet".to_string())
-                                .get_texture(0, 2),
+                            texture: spritesheet.get_texture(0, 2),
                         }));
                         log.props
                             .insert("log".to_string(), *game_object.props.get("tree").unwrap());
@@ -367,18 +374,32 @@ impl engine::World for SomeWorld {
             }
             true
         });
+
         self.game_objects.extend(stumps);
-        // Dropping off logs:
         let fire = self.game_objects.get("fire").unwrap();
-        if fire
-            .get_collider()
-            .as_ref()
-            .unwrap()
-            .collide(&fire, &player_pos, &mut speed)
-            && key_manager.key_up(key_codes::SPACE)
-        {
-            inventory -= 1;
+        let fire_rend = fire.rend[1].downcast_ref::<Fire>().unwrap();
+        let mut heat = fire_rend.heat;
+        // Dropping off logs:
+        if inventory > 0 {
+            if fire
+                .get_collider()
+                .as_ref()
+                .unwrap()
+                .collide(&fire, &player_pos, &mut speed)
+                && key_manager.key_up(key_codes::SPACE)
+            {
+                inventory -= 1;
+                heat = f32::min(1.0, heat + 0.3);
+            }
         }
+        heat *= 1.0 - (timestamp - self.last_tick) as f32 / 100000.0;
+        let fire = self.game_objects.get_mut("fire").unwrap();
+        fire.rend[0] = Box::new(TexturedBox {
+            size: na::Vector2::new(80.0, 80.0),
+            texture: spritesheet.get_texture((heat * 3.0) as i32, 1),
+        });
+        let mut fire_rend = fire.rend[1].downcast_mut::<Fire>().unwrap();
+        fire_rend.heat = heat;
         self.game_objects.get_mut("inventory").unwrap().rend[0]
             .downcast_mut::<Inventory>()
             .unwrap()
@@ -396,7 +417,7 @@ impl engine::World for SomeWorld {
         self.game_objects.get_mut("thermometer").unwrap().rend[0]
             .downcast_mut::<Thermometer>()
             .unwrap()
-            .temperature += 1.0 / r2 * conductivity;
+            .temperature += 1.0 / r2 * heat * conductivity;
 
         let mut player = self.game_objects.get_mut("player").unwrap();
         player.pos += speed * (timestamp - self.last_tick) as f32 * 0.05;
