@@ -172,20 +172,52 @@ impl Rend for Cam {
     }
 }
 
+struct Particle {
+    pos: na::Point2<f32>,
+}
+
+impl Particle {
+    fn new(x: f32, y: f32) -> Particle {
+        Particle {
+            pos: na::Point2::new(x, y),
+        }
+    }
+}
+
 struct Fire {
-    heat: f32,
+    texture: Texture,
+
+    particles: Vec<Particle>,
 }
 
 impl Fire {
-    fn new() -> Fire {
-        Fire { heat: 1.0 }
+    fn new(texture: Texture) -> Fire {
+        Fire {
+            texture,
+            particles: vec![Particle::new(0.0, 5.0)],
+        }
     }
 }
 
 impl Rend for Fire {
     fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
-        renderer.set_fire_heat(self.heat);
+        let heat = *game_object.props.get("heat").unwrap();
+        renderer.set_fire_heat(heat);
         renderer.set_fire_pos(game_object.pos);
+
+        for particle in self.particles.iter() {
+            let render_pos = na::Point2::new(
+                game_object.pos.x + particle.pos.x,
+                game_object.pos.y + particle.pos.y,
+            );
+            let size = heat * 64.0;
+            renderer.draw_quad_with_depth(
+                render_pos,
+                na::Vector2::new(size, size),
+                &self.texture,
+                -game_object.pos.y + 1.0,
+            )
+        }
     }
 }
 
@@ -203,16 +235,17 @@ impl SomeWorld {
         let mut player = GameObject::new(na::Point2::new(350.0, 250.0));
         player.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(128.0, 128.0),
-            texture: spritesheet.get_texture(1, 0),
+            texture: spritesheet.get_texture(0, 0),
         }));
         player.add_rend(Box::new(Cam {}));
         let mut fire = GameObject::new(na::Point2::new(300.0, 280.0));
+        fire.props.insert("heat".to_string(), 1.0);
         fire.add_collider(Collider::new(40.0));
         fire.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(80.0, 80.0),
             texture: spritesheet.get_texture(2, 0),
         }));
-        fire.add_rend(Box::new(Fire::new()));
+        fire.add_rend(Box::new(Fire::new(spritesheet.get_texture(0, 0))));
 
         let mut thermometer = GameObject::new(na::Point2::new(0.0, 150.0));
         thermometer.add_rend(Box::new(Thermometer::new(
@@ -376,9 +409,8 @@ impl engine::World for SomeWorld {
         });
 
         self.game_objects.extend(stumps);
-        let fire = self.game_objects.get("fire").unwrap();
-        let fire_rend = fire.rend[1].downcast_ref::<Fire>().unwrap();
-        let mut heat = fire_rend.heat;
+        let fire = self.game_objects.get_mut("fire").unwrap();
+        let mut heat = *fire.props.get("heat").unwrap();
         // Dropping off logs:
         if inventory > 0 {
             if fire
@@ -393,13 +425,13 @@ impl engine::World for SomeWorld {
             }
         }
         heat *= 1.0 - (timestamp - self.last_tick) as f32 / 100000.0;
+        *fire.props.get_mut("heat").unwrap() = heat;
+        log::debug!("{:?}", fire.props);
         let fire = self.game_objects.get_mut("fire").unwrap();
         fire.rend[0] = Box::new(TexturedBox {
             size: na::Vector2::new(80.0, 80.0),
             texture: spritesheet.get_texture((heat * 3.0) as i32, 1),
         });
-        let mut fire_rend = fire.rend[1].downcast_mut::<Fire>().unwrap();
-        fire_rend.heat = heat;
         self.game_objects.get_mut("inventory").unwrap().rend[0]
             .downcast_mut::<Inventory>()
             .unwrap()
