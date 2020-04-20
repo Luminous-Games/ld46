@@ -427,6 +427,7 @@ impl engine::World for SomeWorld {
                 mul = 0.1;
             }
             heat *= 1.0 - (timestamp - self.last_tick) as f32 / (100000.0 * mul);
+            set_volume(f32::max(0.0, heat - 0.25));
             *fire.props.get_mut("heat").unwrap() = heat;
 
             // log::debug!("{:?}", fire.props);
@@ -439,6 +440,10 @@ impl engine::World for SomeWorld {
         }
 
         if self.game_objects.contains_key("player") {
+            let mut inventory = self.game_objects.get_mut("inventory").unwrap().rend[0]
+                .downcast_mut::<Inventory>()
+                .unwrap()
+                .amount;
             let player = self.game_objects.get("player").unwrap();
 
             let mut speed = player.speed.clone();
@@ -448,8 +453,9 @@ impl engine::World for SomeWorld {
             speed *= 0.1f32.powf(div as f32);
 
             let norm = speed.norm();
-            if norm > 10.0 {
-                speed *= 10.0 / norm;
+            let max_speed = 7.0 - inventory as f32 * 2.0;
+            if norm > max_speed {
+                speed *= max_speed / norm;
             }
 
             if norm < 1.0 {
@@ -459,10 +465,6 @@ impl engine::World for SomeWorld {
             let player_pos = player.pos.clone();
             let mut last_player_hit: f32 = *player.props.get("last_hit").unwrap_or(&0.0);
             let mut stumps = HashMap::new();
-            let mut inventory = self.game_objects.get_mut("inventory").unwrap().rend[0]
-                .downcast_mut::<Inventory>()
-                .unwrap()
-                .amount;
             self.game_objects.retain(|key, game_object| {
                 if let Some(collider) = game_object.get_collider() {
                     if collider.collide(&game_object, &player_pos, &mut speed) {
@@ -609,7 +611,6 @@ pub fn run() {
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
     wasm_logger::init(wasm_logger::Config::default());
-    // set_volume(0.0);
     log::info!("Game starting");
     engine::start(Box::new(SomeWorld::new()) as Box<dyn World>).unwrap();
 }
