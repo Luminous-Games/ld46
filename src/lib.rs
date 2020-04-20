@@ -128,6 +128,15 @@ impl Rend for Cam {
     }
 }
 
+struct Fire {}
+
+impl Rend for Fire {
+    fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
+        renderer.set_fire_heat(1.0);
+        renderer.set_fire_pos(game_object.pos);
+    }
+}
+
 struct SomeWorld {
     game_objects: HashMap<String, GameObject>,
     last_tick: f64,
@@ -151,6 +160,7 @@ impl SomeWorld {
             size: na::Vector2::new(64.0, 64.0),
             texture: spritesheet.get_texture(2, 0),
         }));
+        fire.add_rend(Box::new(Fire {}));
 
         let mut thermometer = GameObject::new(na::Point2::new(0.0, 150.0));
         thermometer.add_rend(Box::new(Thermometer::new(
@@ -256,8 +266,9 @@ impl engine::World for SomeWorld {
                 None => (),
             }
         }
-        let conductivity = (timestamp - self.last_tick) as f32 / 1000.0;
-        let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + 2000.0) / 2000.0).powi(2);
+        let conductivity = (timestamp - self.last_tick) as f32 / 8000.0;
+        let c = 300.0; // smaller number == sharper drop-off
+        let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + c) / c).powi(2);
         self.game_objects.get_mut("thermometer").unwrap().rend[0]
             .downcast_mut::<Thermometer>()
             .unwrap()

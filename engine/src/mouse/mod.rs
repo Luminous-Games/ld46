@@ -9,7 +9,7 @@ use wasm_bindgen::JsCast;
 use self::event::{MouseEvent, MouseEventType};
 pub use self::state::MouseState;
 
-pub const MOUSE_EVENT_MAX: usize = 100;
+pub const MOUSE_EVENT_MAX: usize = 1000;
 
 #[repr(u32)]
 #[derive(Clone, Copy, FromPrimitive)]

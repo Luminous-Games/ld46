@@ -78,6 +78,9 @@ pub struct Renderer {
     programs: HashMap<i32, WebGlProgram>,
     selected_program: i32,
     viewport: na::Vector2<f32>,
+
+    fire_pos: na::Point2<f32>,
+    fire_heat: f32,
     camera: na::Point2<f32>,
 }
 
@@ -131,7 +134,10 @@ impl Renderer {
             selected_program: 0,
             programs: HashMap::new(),
             viewport: na::Vector2::zeros(),
+
             camera: na::Point2::new(0.0, 0.0),
+            fire_heat: 0.0,
+            fire_pos: na::Point2::new(0.0, 0.0),
         }
     }
 
@@ -155,7 +161,7 @@ impl Renderer {
 
     pub fn get_viewport(&self) -> na::Vector2<f32> {
         let aspect_ratio = self.viewport.x / self.viewport.y;
-        const DESIRED_AREA: f32 = 1600.0 * 800.0;
+        const DESIRED_AREA: f32 = 1600.0 * 1200.0;
         let width_sq = DESIRED_AREA * aspect_ratio;
         let width = width_sq.sqrt();
 
@@ -168,6 +174,14 @@ impl Renderer {
 
     pub fn get_camera(&self) -> na::Point2<f32> {
         self.camera
+    }
+
+    pub fn set_fire_pos(&mut self, fire_pos: na::Point2<f32>) {
+        self.fire_pos = fire_pos;
+    }
+
+    pub fn set_fire_heat(&mut self, fire_heat: f32) {
+        self.fire_heat = fire_heat;
     }
 
     pub fn draw_quad(&mut self, pos: na::Point2<f32>, size: na::Vector2<f32>, texture: &Texture) {
@@ -301,6 +315,10 @@ impl Renderer {
             .gl
             .get_uniform_location(&program, "uTransform")
             .unwrap();
+        let fire_position_uniform_location =
+            self.gl.get_uniform_location(&program, "uFirePos").unwrap();
+        let fire_heat_uniform_location =
+            self.gl.get_uniform_location(&program, "uFireHeat").unwrap();
 
         self.gl.vertex_attrib_pointer_with_i32(
             position_attrib_location,
@@ -358,6 +376,14 @@ impl Renderer {
             false,
             camera_pos_transform.to_homogeneous().as_slice(),
         );
+
+        self.gl.uniform2f(
+            Some(&fire_position_uniform_location),
+            self.fire_pos.x,
+            self.fire_pos.y,
+        );
+        self.gl
+            .uniform1f(Some(&fire_heat_uniform_location), self.fire_heat);
 
         self.gl.enable_vertex_attrib_array(position_attrib_location);
         self.gl.enable_vertex_attrib_array(color_attrib_location);
