@@ -212,7 +212,7 @@ impl Renderer {
         tint: na::Vector3<f32>,
     ) {
         if tint.norm_squared() != 3.0 {
-            log::debug!("{:?}", tint);
+            // log::debug!("{:?}", tint);
         }
         self.draw_quad_with_depth_and_tint(pos, size, texture, -pos.y, tint);
     }

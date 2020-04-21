@@ -230,6 +230,12 @@ impl Rend for Fire {
     }
 }
 
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
 struct SomeWorld {
     game_objects: HashMap<String, GameObject, BuildHasherDefault<hashers::fnv::FNV1aHasher32>>,
     last_tick: f64,
@@ -242,13 +248,13 @@ impl SomeWorld {
     fn new() -> SomeWorld {
         let spritesheet = TextureMap::new(4, 4, "spritesheet".to_string());
 
-        let mut player = GameObject::new(na::Point2::new(350.0, 250.0));
+        let mut player = GameObject::new(na::Point2::new(-401.0, 1700.0));
         player.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(64.0, 128.0),
             texture: spritesheet.get_texture_custom(3.0, 2.0, 1.0, 2.0),
         }));
         player.add_rend(Box::new(Cam {}));
-        let mut fire = GameObject::new(na::Point2::new(300.0, 280.0));
+        let mut fire = GameObject::new(na::Point2::new(-501.0, 1750.0));
         fire.props.insert("heat".to_string(), 1.0);
         fire.add_collider(Collider::new(40.0));
         fire.add_rend(Box::new(TexturedBox {
@@ -287,11 +293,11 @@ impl SomeWorld {
         game_objects.insert("inventory".to_string(), inventory);
         game_objects.insert("grass".to_string(), grass);
 
-        // let perlin = Perlin::new().set_seed(2);
-        const TREE_COLLISION_RANGE: f32 = 16.0;
-        // const PERLIN_SCALER: f64 = 20.0; // smaller number = bigger features
-        // let mut treshold = SmallRng::seed_from_u64(0);
+        const TREE_COLLISION_RANGE: f32 = 17.0;
         let mut tree_i = 0;
+        // let perlin = Perlin::new().set_seed(10);
+        // const PERLIN_SCALER: f64 = 10.0; // smaller number = bigger features
+        // let mut treshold = SmallRng::seed_from_u64(0);
         // for sample in Builder::<_, na::Vector2<f64>>::with_radius(
         //     TREE_COLLISION_RANGE as f64 * 2.0 / WORLD_EDGE,
         //     Type::Normal,
@@ -301,17 +307,17 @@ impl SomeWorld {
         // {
         //     let perlin_coords: [f64; 2] =
         //         (*(&sample * PERLIN_SCALER).as_slice()).try_into().unwrap();
-        //     // if (perlin.get(perlin_coords)) > treshold.gen_range(0.0, 1.5) {
-        //     if (perlin.get(perlin_coords)) > treshold.sample(Normal::new(0.0, 0.5)) {
+        // if (perlin.get(perlin_coords)) > treshold.gen_range(0.0, 1.5) {
+        // if (perlin.get(perlin_coords)) > treshold.sample(Normal::new(-0.1, 0.5)) {
         // let world_coords = (&sample - Vector2::new(0.5, 0.5)) * WORLD_EDGE;
-        // log::debug!("{:?}", world_coords);
+        // log!("{:?}", world_coords);
         for (x, y) in trees::TREES.iter() {
             let mut tree =
-                // GameObject::new(Point2::new(world_coords.x as f32, world_coords.y as f32));
+                    // GameObject::new(Point2::new(world_coords.x as f32, world_coords.y as f32));
                 GameObject::new(Point2::new(*x, *y));
             tree.add_collider(Collider::new(TREE_COLLISION_RANGE));
             tree.add_rend(Box::new(TexturedBox {
-                size: na::Vector2::new(128.0, 128.0),
+                size: na::Vector2::new(150.0, 150.0),
                 texture: spritesheet.get_texture(1, 0),
             }));
             tree.props.insert("tree".to_string(), tree_i as f32);
@@ -378,7 +384,7 @@ impl SomeWorld {
             .insert("stump".to_string(), *tree.props.get("tree").unwrap());
         stumps.insert(format!("stump{}", tree_name), stump);
         let mut log = GameObject::new(&tree.pos + Vector2::new(32.0, 32.0));
-        log.add_collider(Collider::new(10.0));
+        log.add_collider(Collider::new(16.0));
         log.add_rend(Box::new(TexturedBox {
             size: na::Vector2::new(64.0, 64.0),
             texture: spritesheet.get_texture(0, 2),
@@ -457,11 +463,11 @@ impl engine::World for SomeWorld {
             let mut speed = player.speed.clone();
             speed += direction * ((timestamp - self.last_tick) as f32 * 0.1);
 
-            let div = (timestamp - self.last_tick) / 200.0;
+            let div = (timestamp - self.last_tick) / 205.0;
             speed *= 0.1f32.powf(div as f32);
 
             let norm = speed.norm();
-            let max_speed = 7.0 - inventory as f32 * 2.0;
+            let max_speed = 7.5 - inventory as f32 * 2.0;
             if norm > max_speed {
                 speed *= max_speed / norm;
             }
@@ -493,7 +499,7 @@ impl engine::World for SomeWorld {
                                 );
                                 return false;
                             } else {
-                                log::debug!("{:?}", game_object.props);
+                                // log::debug!("{:?}", game_object.props);
                                 game_object
                                     .props
                                     .insert("hit_count".to_string(), hit_count + 1.0);
@@ -578,7 +584,7 @@ impl engine::World for SomeWorld {
 
             let player = self.game_objects.get("player").unwrap();
             let fire = self.game_objects.get("fire").unwrap();
-            let conductivity = (timestamp - self.last_tick) as f32 / 6000.0;
+            let conductivity = (timestamp - self.last_tick) as f32 / 8000.0;
             let c = 600.0; // smaller number == sharper drop-off
             let r2 = ((f32::max(0.0, (player.pos - fire.pos).norm() - 48.0) + c) / c).powi(2);
             self.game_objects.get_mut("thermometer").unwrap().rend[0]
