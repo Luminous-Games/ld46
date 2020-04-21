@@ -155,6 +155,7 @@ impl Grass {
         Grass { texture_map }
     }
 }
+
 impl Rend for Grass {
     fn render(&self, renderer: &mut Renderer, _game_object: &GameObject) {
         let cam = renderer.get_camera();
@@ -240,6 +241,7 @@ struct SomeWorld {
     game_objects: HashMap<String, GameObject, BuildHasherDefault<hashers::fnv::FNV1aHasher32>>,
     last_tick: f64,
     seconds: f64,
+    death: f64,
 }
 
 const WORLD_EDGE: f64 = 10000.0;
@@ -313,7 +315,7 @@ impl SomeWorld {
         // log!("{:?}", world_coords);
         for (x, y) in trees::TREES.iter() {
             let mut tree =
-                    // GameObject::new(Point2::new(world_coords.x as f32, world_coords.y as f32));
+                // GameObject::new(Point2::new(world_coords.x as f32, world_coords.y as f32));
                 GameObject::new(Point2::new(*x, *y));
             tree.add_collider(Collider::new(TREE_COLLISION_RANGE));
             tree.add_rend(Box::new(TexturedBox {
@@ -330,6 +332,7 @@ impl SomeWorld {
             game_objects,
             last_tick: 0.0,
             seconds: 0.0,
+            death: 0.0,
         }
     }
 
@@ -424,9 +427,23 @@ impl engine::World for SomeWorld {
         {
             let fire = self.game_objects.get_mut("fire").unwrap();
             let mut heat = *fire.props.get("heat").unwrap();
+            let mut mul = 0.4; // bigger value = light goes out slower
+            if player_dead {
+                mul = 0.2;
+            }
+            heat *= 1.0 - (timestamp - self.last_tick) as f32 / (100000.0 * mul);
+            if heat < 0.2 {
+                exeunt(self.death);
+            }
             if heat < 0.25 && !player_dead {
                 if !self.game_objects.contains_key("deathwatch") {
-                    exeunt( format!("You let your fire die out and are now doomed to die as well.\n\n You managed to survive for {:.0} seconds.", self.seconds.round()));
+                    let window = web_sys::window().unwrap();
+                    window
+                        .alert_with_message(
+                            "You let your fire die out and are now doomed to die as well.",
+                        )
+                        .unwrap();
+                    self.death = self.seconds.round();
 
                     let player_pos = self.game_objects.get("player").unwrap().pos;
                     let mut death_watch = GameObject::new(player_pos);
@@ -434,13 +451,10 @@ impl engine::World for SomeWorld {
                     self.game_objects
                         .insert("deathwatch".to_string(), death_watch);
                 }
+                let fire = self.game_objects.get_mut("fire").unwrap();
+                *fire.props.get_mut("heat").unwrap() = heat;
                 return;
             }
-            let mut mul = 0.4; // bigger value = light goes out slower
-            if player_dead {
-                mul = 0.2;
-            }
-            heat *= 1.0 - (timestamp - self.last_tick) as f32 / (100000.0 * mul);
             set_volume(f32::max(0.0, heat - 0.25));
             *fire.props.get_mut("heat").unwrap() = heat;
 
@@ -613,7 +627,10 @@ impl engine::World for SomeWorld {
             if player_temp < 0.25 {
                 let mut death_watch = GameObject::new(player_pos);
                 death_watch.add_rend(Box::new(Cam {}));
-                exeunt( format!("You let your self underheat and were vanquished by the cold, leaving your fire to decay to a smoulder. \n\n You managed to survive for {:.0} seconds.", self.seconds.round()));
+                let window = web_sys::window().unwrap();
+                window.alert_with_message("You let yourself underheat and were vanquished by the cold, leaving your fire to decay to a smoulder.").unwrap();
+                self.death = self.seconds.round();
+
                 self.game_objects
                     .insert("deathwatch".to_string(), death_watch);
                 self.game_objects.remove("player");
@@ -654,7 +671,7 @@ extern "C" {
     fn duue();
     fn quipp();
 
-    fn exeunt(desc: String);
+    fn exeunt(time: f64);
 }
 
 #[wasm_bindgen]

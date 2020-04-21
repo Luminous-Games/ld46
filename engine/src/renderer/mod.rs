@@ -1,7 +1,6 @@
 extern crate nalgebra as na;
 
 use halfbrown::HashMap;
-
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlTexture};
 
 const FLOAT32_BYTES: i32 = 4;

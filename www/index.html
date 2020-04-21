@@ -1,117 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+    <meta charset="UTF-8"/>
     <title><%= htmlWebpackPlugin.options.title %></title>
     <style>
-      * {
-        box-sizing: border-box;
-      }
+        * {
+            box-sizing: border-box;
+        }
 
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
 
-      canvas#canvas {
-        margin: auto;
-        background: green;
-        display: block;
-      }
-      #tutorial {
-        margin: 40px auto;
-        max-width: 550px;
-        line-height: 1.6;
-        font-size: 18px;
-        color: #444;
-        padding: 0 10px;
-      }
-      #character {
-        float: right;
-      }
+        canvas#canvas {
+            margin: auto;
+            background: green;
+            display: block;
+        }
 
-      h1,
-      h2,
-      h3 {
-        line-height: 1.2;
-      }
+        #tutorial {
+            margin: 40px auto;
+            max-width: 550px;
+            line-height: 1.6;
+            font-size: 18px;
+            color: #444;
+            padding: 0 10px;
+        }
 
-      #start_button {
-        display: inline-block;
-        padding: 0.35em 1.2em;
-        border: 0.1em solid #111111;
-        background-color: #ffffff;
-        margin: 0 0.3em 0.3em 0;
-        border-radius: 0.12em;
-        box-sizing: border-box;
-        text-decoration: none;
-        font-family: "Roboto", sans-serif;
-        font-weight: 300;
-        color: #111111;
-        text-align: center;
-        transition: all 0.2s;
-      }
-      #start_button:hover {
-        transition: color 0.3s, background-color 0.3s;
-        color: #ffffff;
-        background-color: #111111;
-      }
+        #character {
+            float: right;
+        }
 
-      .exeunt {
-        display: flex;
-        position: fixed;
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.3);
-        padding: auto;
-        text-align: center;
-        transition: background-color 3s;
-      }
-      .exeunt > p {
-        margin: auto;
-        color: white !important;
-        font-size: 64px;
-        transition: color 5s;
-      }
+        h1,
+        h2,
+        h3 {
+            line-height: 1.2;
+        }
+
+        #start_button {
+            display: inline-block;
+            padding: 0.35em 1.2em;
+            border: 0.1em solid #111111;
+            background-color: #ffffff;
+            margin: 0 0.3em 0.3em 0;
+            border-radius: 0.12em;
+            box-sizing: border-box;
+            text-decoration: none;
+            font-family: "Roboto", sans-serif;
+            font-weight: 300;
+            color: #111111;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        #start_button:hover {
+            transition: color 0.3s, background-color 0.3s;
+            color: #ffffff;
+            background-color: #111111;
+        }
+
+        .exeunt {
+            display: flex;
+            flex-wrap: wrap;
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 1);
+            /*padding: auto;*/
+            text-align: center;
+            transition: background-color 10s ease 0s;
+        }
+
+        .exeunt > #top_line {
+            margin: auto;
+            color: white !important;
+            font-size: 64px;
+            transition: color 10s ease 5s;
+        }
+
+        .exeunt > #bottom_line {
+            margin: auto;
+            color: white !important;
+            font-size: 48px;
+            transition: color 10s ease 15s;
+        }
+
+        .break {
+            flex-basis: 100%;
+            height: 0;
+        }
     </style>
-  </head>
-  <body>
-    <noscript
-      >This page contains webassembly and javascript content, please enable
-      javascript in your browser.</noscript
-    >
-    <div id="tutorial">
-      <img id="character" height="128px" width="64px" />
-      <div id="tutorial_text">
+</head>
+<body>
+<noscript
+>This page contains webassembly and javascript content, please enable
+    javascript in your browser.
+</noscript
+>
+<div id="tutorial">
+    <img height="128px" id="character" width="64px"/>
+    <div id="tutorial_text">
         <h1>Hello!</h1>
         <p>
-          You are a wisp lost in a forest. Isolated from your community, you are
-          weak and exposed to the elements. You managed to conjure some of your
-          power and light a fire, but you will not be able to do it again. Your
-          only hope is to...
+            You are a wisp lost in a forest. Isolated from your community, you are
+            weak and exposed to the elements. You managed to conjure some of your
+            power and light a fire, but you will not be able to do it again. Your
+            only hope is to...
         </p>
         <p><strong>Keep the fire alive!</strong></p>
         <p>
-          If you venture too far from the fire for too long you'll freeze.
-          You'll be unable to keep the fire alive when dead...
+            If you venture too far from the fire for too long you'll freeze.
+            You'll be unable to keep the fire alive when dead...
         </p>
         <ul>
-          <li>WASD or ← → ↑ ↓ (or HJKL) - move around</li>
-          <li>E - pick up logs / place them into fire</li>
-          <li>SPACE (repeatedly) - chop down trees</li>
+            <li>WASD or ← → ↑ ↓ (or HJKL) - move around</li>
+            <li>E - pick up logs / place them into fire</li>
+            <li>SPACE (repeatedly) - chop down trees</li>
         </ul>
-        <button id="start_button" disabled autofocus>START</button>
-      </div>
+        <button autofocus disabled id="start_button">START</button>
     </div>
-    <img id="spritesheet" style="display: none;" />
-    <img id="tuustid" style="display: none;" />
-    <img id="grass" style="display: none;" />
-    <img id="ui" style="display: none;" />
-  </body>
+</div>
+<img id="spritesheet" style="display: none;"/>
+<img id="tuustid" style="display: none;"/>
+<img id="grass" style="display: none;"/>
+<img id="ui" style="display: none;"/>
+</body>
 </html>

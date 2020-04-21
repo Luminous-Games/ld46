@@ -17,7 +17,6 @@ use web_sys::WebGlRenderingContext;
 use renderer::Renderer;
 
 pub mod key;
-pub mod mouse;
 pub mod renderer;
 
 pub trait Renderable {
@@ -28,6 +27,7 @@ pub trait World {
     fn tick(&mut self, key_manager: &key::KeyManager, timestamp: f64);
     fn get_game_objects(&self) -> Vec<&GameObject>;
 }
+
 pub struct GameObject {
     pub pos: na::Point2<f32>,
     pub speed: na::Vector2<f32>,
@@ -35,6 +35,7 @@ pub struct GameObject {
     pub rend: Vec<Box<dyn Rend>>,
     pub props: HashMap<String, f32>,
 }
+
 impl GameObject {
     pub fn new(pos: na::Point2<f32>) -> GameObject {
         GameObject {
@@ -116,7 +117,6 @@ impl Renderable for GameObject {
 
 pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
     let mut key_manager = key::KeyManager::new();
-    let mut mouse_manager = mouse::MouseManager::new();
 
     let document = web_sys::window().unwrap().document().unwrap();
     let canvas = document.get_element_by_id("canvas").unwrap();
@@ -146,7 +146,6 @@ pub fn start(mut world: Box<dyn World>) -> Result<(), JsValue> {
 
         renderer.set_viewport(viewport);
 
-        mouse_manager.pre_tick_process_mouse_state();
         world.tick(&key_manager, timestamp);
         let gameobjects = world.get_game_objects();
         key_manager.post_tick_update_key_states();
