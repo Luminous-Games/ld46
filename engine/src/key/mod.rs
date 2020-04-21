@@ -42,7 +42,9 @@ impl KeyManager {
 
         let keys_keyup = keys.clone();
         let onkeyup = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
-            e.prevent_default();
+            if (e.key_code() as usize) < key_codes::F1 || e.key_code() as usize > key_codes::F12 {
+                e.prevent_default();
+            }
             if e.key_code() < KEY_CODE_MAX.try_into().unwrap() {
                 keys_keyup.borrow_mut()[e.key_code() as usize] = KeyCodeState::Up;
             }
@@ -52,7 +54,9 @@ impl KeyManager {
 
         let keys_keydown = keys.clone();
         let onkeydown = Closure::wrap(Box::new(move |e: web_sys::KeyboardEvent| {
-            e.prevent_default();
+            if (e.key_code() as usize) < key_codes::F1 || e.key_code() as usize > key_codes::F12 {
+                e.prevent_default();
+            }
             if e.key_code() < KEY_CODE_MAX.try_into().unwrap() {
                 keys_keydown.borrow_mut()[e.key_code() as usize] = KeyCodeState::Down;
             }
