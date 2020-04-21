@@ -233,6 +233,7 @@ impl Rend for Fire {
 struct SomeWorld {
     game_objects: HashMap<String, GameObject, BuildHasherDefault<hashers::fnv::FNV1aHasher32>>,
     last_tick: f64,
+    seconds: f64,
 }
 
 const WORLD_EDGE: f64 = 10000.0;
@@ -322,6 +323,7 @@ impl SomeWorld {
         SomeWorld {
             game_objects,
             last_tick: 0.0,
+            seconds: 0.0,
         }
     }
 
@@ -393,6 +395,8 @@ impl engine::World for SomeWorld {
             self.last_tick = timestamp;
             return;
         }
+        let deltatime = timestamp - self.last_tick;
+        self.seconds += deltatime / 1000.0;
         let spritesheet = TextureMap::new(4, 4, "spritesheet".to_string());
         let direction = SomeWorld::get_direction(key_manager);
 
@@ -416,12 +420,7 @@ impl engine::World for SomeWorld {
             let mut heat = *fire.props.get("heat").unwrap();
             if heat < 0.25 && !player_dead {
                 if !self.game_objects.contains_key("deathwatch") {
-                    let window = web_sys::window().unwrap();
-                    window
-                        .alert_with_message(
-                            "You let your fire die out and are now doomed to die as well.",
-                        )
-                        .unwrap();
+                    exeunt( format!("You let your fire die out and are now doomed to die as well.\n\n You managed to survive for {:.0} seconds.", self.seconds.round()));
 
                     let player_pos = self.game_objects.get("player").unwrap().pos;
                     let mut death_watch = GameObject::new(player_pos);
@@ -608,10 +607,7 @@ impl engine::World for SomeWorld {
             if player_temp < 0.25 {
                 let mut death_watch = GameObject::new(player_pos);
                 death_watch.add_rend(Box::new(Cam {}));
-                let window = web_sys::window().unwrap();
-                window.alert_with_message(
-                    "You let yourself underheat and were vanquished by the cold, leaving your fire to decay to a smoulder."
-                ).unwrap();
+                exeunt( format!("You let your self underheat and were vanquished by the cold, leaving your fire to decay to a smoulder. \n\n You managed to survive for {:.0} seconds.", self.seconds.round()));
                 self.game_objects
                     .insert("deathwatch".to_string(), death_watch);
                 self.game_objects.remove("player");
@@ -651,6 +647,8 @@ extern "C" {
     fn dfhh();
     fn duue();
     fn quipp();
+
+    fn exeunt(desc: String);
 }
 
 #[wasm_bindgen]
