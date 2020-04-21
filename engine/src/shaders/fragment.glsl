@@ -28,7 +28,7 @@ vec3 colorTemperatureToRGB(const in float temperature){
 
 
 void main() {
-  vec4 texColor = texture2D(uSampler, vTexCoord) * vFragColor;
+  vec4 texColor = texture2D(uSampler, vTexCoord);
   texColor.rgb *= texColor.a;
   if (texColor.a < 0.5) discard;
 
@@ -46,5 +46,5 @@ void main() {
   // luminance
   outColor.rgb *= clamp(uFireHeat/r2, 0.2, 1.0);
 
-  gl_FragColor = vec4(outColor, texColor.a);
+  gl_FragColor = vec4(outColor, texColor.a) * vFragColor;
 }

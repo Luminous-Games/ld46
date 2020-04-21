@@ -33,7 +33,16 @@ struct TexturedBox {
 
 impl Rend for TexturedBox {
     fn render(&self, renderer: &mut Renderer, game_object: &GameObject) {
-        renderer.draw_quad(game_object.pos, self.size, &self.texture)
+        renderer.draw_quad_with_tint(
+            game_object.pos,
+            self.size,
+            &self.texture,
+            na::Vector3::new(
+                *game_object.props.get("tint_red").unwrap_or(&1.0),
+                *game_object.props.get("tint_green").unwrap_or(&1.0),
+                *game_object.props.get("tint_blue").unwrap_or(&1.0),
+            ),
+        )
     }
 }
 
@@ -468,7 +477,7 @@ impl engine::World for SomeWorld {
             self.game_objects.retain(|key, game_object| {
                 if let Some(collider) = game_object.get_collider() {
                     if collider.collide(&game_object, &player_pos, &mut speed) {
-                        if (timestamp - last_player_hit as f64) > 200.0
+                        if (timestamp - last_player_hit as f64) > 250.0
                             && key_manager.key_down(key_codes::SPACE)
                             && game_object.props.contains_key("tree")
                         {
@@ -485,9 +494,25 @@ impl engine::World for SomeWorld {
                                 );
                                 return false;
                             } else {
+                                log::debug!("{:?}", game_object.props);
                                 game_object
                                     .props
                                     .insert("hit_count".to_string(), hit_count + 1.0);
+                                // if !game_object.props.contains_key("tint_green") {
+                                //     game_object.props.insert("tint_green".to_string(), 1.0);
+                                // }
+                                // *game_object.props.get_mut("tint_green").unwrap() = 0.2;
+
+                                // if !game_object.props.contains_key("tint_red") {
+                                //     game_object.props.insert("tint_red".to_string(), 1.0);
+                                // }
+                                // *game_object.props.get_mut("tint_red").unwrap() = 0.2;
+
+                                if !game_object.props.contains_key("tint_blue") {
+                                    game_object.props.insert("tint_blue".to_string(), 1.0);
+                                }
+                                *game_object.props.get_mut("tint_blue").unwrap() = 10.0;
+
                                 game_object.rend.clear();
                                 game_object.add_rend(Box::new(TexturedBox {
                                     size: na::Vector2::new(128.0, 128.0),
@@ -592,6 +617,24 @@ impl engine::World for SomeWorld {
                 self.game_objects.remove("player");
                 self.game_objects.remove("thermometer");
                 self.game_objects.remove("inventory");
+            }
+        }
+        let damp = 0.1f64.powf((timestamp - self.last_tick) / 1000.0) as f32;
+        for game_object in self.game_objects.values_mut() {
+            if game_object.props.contains_key("tint_red") {
+                let tint_red = game_object.props.get("tint_red").unwrap();
+                *game_object.props.get_mut("tint_red").unwrap() =
+                    damp * tint_red + (1.0 - damp) * 1.0
+            }
+            if game_object.props.contains_key("tint_blue") {
+                let tint_blue = game_object.props.get("tint_blue").unwrap();
+                *game_object.props.get_mut("tint_blue").unwrap() =
+                    damp * tint_blue + (1.0 - damp) * 1.0
+            }
+            if game_object.props.contains_key("tint_green") {
+                let tint_green = game_object.props.get("tint_green").unwrap();
+                *game_object.props.get_mut("tint_green").unwrap() =
+                    damp * tint_green + (1.0 - damp) * 1.0
             }
         }
         self.last_tick = timestamp;

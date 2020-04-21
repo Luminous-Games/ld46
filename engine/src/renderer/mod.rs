@@ -195,6 +195,36 @@ impl Renderer {
         texture: &Texture,
         depth: f32,
     ) {
+        self.draw_quad_with_depth_and_tint(
+            pos,
+            size,
+            texture,
+            depth,
+            na::Vector3::new(1.0, 1.0, 1.0),
+        );
+    }
+
+    pub fn draw_quad_with_tint(
+        &mut self,
+        pos: na::Point2<f32>,
+        size: na::Vector2<f32>,
+        texture: &Texture,
+        tint: na::Vector3<f32>,
+    ) {
+        if tint.norm_squared() != 3.0 {
+            log::debug!("{:?}", tint);
+        }
+        self.draw_quad_with_depth_and_tint(pos, size, texture, -pos.y, tint);
+    }
+
+    pub fn draw_quad_with_depth_and_tint(
+        &mut self,
+        pos: na::Point2<f32>,
+        size: na::Vector2<f32>,
+        texture: &Texture,
+        depth: f32,
+        tint: na::Vector3<f32>,
+    ) {
         if !self.vertices.contains_key(&texture.texture_name) {
             self.vertices.insert(
                 texture.texture_name.to_owned(),
@@ -206,36 +236,36 @@ impl Renderer {
         vertices.push(pos.x - size.x / 2.0);
         vertices.push(pos.y);
         vertices.push(depth);
-        vertices.push(1.0);
-        vertices.push(1.0);
-        vertices.push(1.0);
+        vertices.push(tint.x);
+        vertices.push(tint.y);
+        vertices.push(tint.z);
         vertices.push(texture.start.x);
         vertices.push(texture.start.y + texture.size.y);
 
         vertices.push(pos.x + size.x / 2.0);
         vertices.push(pos.y);
         vertices.push(depth);
-        vertices.push(1.0);
-        vertices.push(1.0);
-        vertices.push(1.0);
+        vertices.push(tint.x);
+        vertices.push(tint.y);
+        vertices.push(tint.z);
         vertices.push(texture.start.x + texture.size.x);
         vertices.push(texture.start.y + texture.size.y);
 
         vertices.push(pos.x - size.x / 2.0);
         vertices.push(pos.y + size.y);
         vertices.push(depth);
-        vertices.push(1.0);
-        vertices.push(1.0);
-        vertices.push(1.0);
+        vertices.push(tint.x);
+        vertices.push(tint.y);
+        vertices.push(tint.z);
         vertices.push(texture.start.x);
         vertices.push(texture.start.y);
 
         vertices.push(pos.x + size.x / 2.0);
         vertices.push(pos.y + size.y);
         vertices.push(depth);
-        vertices.push(1.0);
-        vertices.push(1.0);
-        vertices.push(1.0);
+        vertices.push(tint.x);
+        vertices.push(tint.y);
+        vertices.push(tint.z);
         vertices.push(texture.start.x + texture.size.x);
         vertices.push(texture.start.y);
     }
